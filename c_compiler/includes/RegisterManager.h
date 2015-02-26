@@ -33,8 +33,8 @@ private:
 
 	unsigned findLRU();
 
-	void store(unsigned reg, ListNode node);
-	void load(unsigned reg);
+	void store(ListNode node);
+	ListNode load(std::string variableName);
 
 	ListNode registers[NO_REGISTERS];
 

@@ -25,7 +25,7 @@ unsigned RegisterManager::allocate(std::string variableName){
 unsigned RegisterManager::allocate(std::string variableName, int value){
 	unsigned reg = findLRU();
 	InstructionData data = { variableName, 0, value };
-	store(reg, registers[reg]);
+	store(registers[reg]);
 	registers[reg] = { true, data, 0 };
 	return reg;
 }
@@ -40,11 +40,19 @@ void RegisterManager::deallocate(std::string variableName){
 	std::list<ListNode>::const_iterator end = memory.end();
 	std::list<ListNode>::const_iterator item = std::find(memory.begin(), end,);	//TO-DO add search aparameter without knowing value
 	if (item == end)
-		throw new M;	//TO-DO throw correct exception for no memory allocated to variable
+		throw new ;	//TO-DO throw correct exception for no memory allocated to variable
 }
 
-void RegisterManager::store(unsigned reg, const ListNode node){
+void RegisterManager::store(const ListNode node){
 	//TO-DO add STORE instruction here
+	ListNode storable = node;
+	storable.TimeSinceUse = 0;
+	storable.data.memoryLocation = getFreeMemory();
+	memory.push_front(storable);
+}
+
+ListNode RegisterManager::load(std::string variableName){
+	//TO-DO add LOAD instruction here
 }
 
 unsigned RegisterManager::findLRU(){
