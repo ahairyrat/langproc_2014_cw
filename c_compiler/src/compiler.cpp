@@ -5,6 +5,5 @@
 
 int main()
 {
-	Lexer* lexer = new Lexer();
 	return 0;
 }
