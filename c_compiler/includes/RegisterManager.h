@@ -3,14 +3,14 @@
 #define __C_COMPILER_REGISTER_MANAGER
 #endif
 
-#include <list>
+#include <deque>
 
 #define NO_REGISTERS 12
 
 struct InstructionData{
 	std::string variableName;
+	unsigned registerLocation;
 	unsigned memoryLocation;
-	int value;
 };
 
 struct ListNode{
@@ -19,25 +19,40 @@ struct ListNode{
 	int TimeSinceUse;
 };
 
+class RegisterAllocationException : _exception
+{
+
+};
+
+class MemoryAllocationException : _exception
+{
+
+};
+
 class RegisterManager
 {
 public:
 	RegisterManager();
 
 	unsigned allocate(std::string variableName);
-	unsigned allocate(std::string variableName, int value);
 	void deallocate(std::string variableName);
 
-	virtual ~RegisterManager();
-private:
+	InstructionData* get(std::string variableName);
 
+	virtual ~RegisterManager();
+
+private:
 	unsigned findLRU();
 
-	void store(ListNode node);
-	ListNode load(std::string variableName);
+	int getRegister(std::string variableName);
+
+	int getMemory(std::string variableName);
+
+	void store(ListNode node, unsigned reg);
+	void load(std::string variableName, unsigned reg);
 
 	ListNode registers[NO_REGISTERS];
 
-	std::list < ListNode > memory;
+	std::deque < ListNode > memory;
 };
 
