@@ -8,5 +8,4 @@ class Lexer{
 public:
 	Lexer();
 	void lex();
-
 };
