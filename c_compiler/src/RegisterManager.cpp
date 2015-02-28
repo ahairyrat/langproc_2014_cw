@@ -32,6 +32,7 @@ unsigned RegisterManager::allocate(const std::string variableName){
 		//This will add the LOAD assembly instruction and remove data from memory list
 		load(variableName, reg);
 	}
+	//If the variable has not been previously allocated, we need to find  aplace to store it
 	else{
 		reg = findLRU();
 		data = { variableName, reg, 0 };
