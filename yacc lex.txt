@@ -35,37 +35,36 @@ DOUBLE ::= 'double'
 FLOAT ::= 'float'
 SIGNED ::= 'signed'
 UNSIGNED ::= 'unsigned'
-SHORT ::= 'short'
-LONG ::= 'long'
+SHORT ::= 'short'+
+LONG ::= 'long'+
 VOID ::= 'void'
 CONST ::= 'const'
 VOLATILE ::= 'volatile'
+VARIABLE_NAME ::= (LETTER | UNDERSCORE) (LETTER | NUMBER | UNDERSCORE)*
+UNDERSCORE ::= '_'
+LETTER ::= 'a'->'z' | 'A' -> 'Z'
+NUMBER ::= '0' -> '9'
 
-type ::= type_qualifier? (type_specifier? basic_type | custom_type) type_qualifier?
+type_non_pointer ::= type_qualifier? (type_specifier? basic_type | custom_type) type_qualifier?
 
-basic_type ::= INT | CHAR | DOUBLE | FLOAT
+basic_type ::= INT | CHAR | DOUBLE | FLOAT | VOID
 type_specifier ::= SIGNED | UNSIGNED | SHORT | LONG
 type_qualifier ::= (CONST | VOLATILE) (CONST | VOLATILE)
 
-type_pointer ::= (type | VOID) POINTER CONST?
+type_pointer ::= type POINTER CONST?
 
 custom_type  ::= TYPEDEF
 
+type ::= type_non_pointer | type_pointer 
 
 term ::= 
 
 function_call ::= FUNCTION_NAME OPEN_BRACKET variable_list CLOSE BRACKET
 
-function_definition ::= type_id FUNCTION_NAME OPEN_BRACKET parameter_list? CLOSE_BRACKET OPEN_CURLY_BRACKET function_body CLOSE_CURLY_BRACKET
+function_definition ::= type_id FUNCTION_NAME OPEN_BRACKET variable_list? CLOSE_BRACKET OPEN_CURLY_BRACKET function_body CLOSE_CURLY_BRACKET
 
 expression ::= 
 
 variable_list ::= variable COMMA variable_list | variable
 
-parameter_list ::= parameter COMMA | parameter
-
-parameter ::= type_id NAME
-
-variable ::= 
-
-type_id ::= types | types POINTER 
+variable ::= type VARIABLE_NAME
