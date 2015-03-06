@@ -29,21 +29,40 @@ NOT_EQUALS ::= NOT EQUALS
 MODULUS ::= '%'
 LOGICAL_EQUALS ::= EQUALS EQUALS
 LOGICAL LESS_THAN_EQUALS ::= LESS_THAN EQUALS
+INT ::= 'int'
+CHAR ::= 'char'
+DOUBLE ::= 'double'
+FLOAT ::= 'float'
+SIGNED ::= 'signed'
+UNSIGNED ::= 'unsigned'
+SHORT ::= 'short'
+LONG ::= 'long'
+VOID ::= 'void'
+CONST ::= 'const'
+VOLATILE ::= 'volatile'
 
+type ::= type_qualifier? (type_specifier? basic_type | custom_type) type_qualifier?
 
+basic_type ::= INT | CHAR | DOUBLE | FLOAT
+type_specifier ::= SIGNED | UNSIGNED | SHORT | LONG
+type_qualifier ::= (CONST | VOLATILE) (CONST | VOLATILE)
+
+type_pointer ::= (type | VOID) POINTER CONST?
+
+custom_type  ::= TYPEDEF
 
 
 term ::= 
 
 function_call ::= FUNCTION_NAME OPEN_BRACKET variable_list CLOSE BRACKET
 
-function_definition ::= type_id FUNCTION_NAME OPEN_BRACKET parameter_list CLOSE_BRACKET OPEN_CURLY_BRACKET function_body CLOSE_CURLY_BRACKET
+function_definition ::= type_id FUNCTION_NAME OPEN_BRACKET parameter_list? CLOSE_BRACKET OPEN_CURLY_BRACKET function_body CLOSE_CURLY_BRACKET
 
 expression ::= 
 
 variable_list ::= variable COMMA variable_list | variable
 
-parameter_list ::= (parameter COMMA | parameter) | EPSILON
+parameter_list ::= parameter COMMA | parameter
 
 parameter ::= type_id NAME
 
