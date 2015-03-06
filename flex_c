@@ -1,0 +1,52 @@
+
+POINTER						'\*'
+COMMA						','
+OPEN_BRACKET				'('
+CLOSE_BRACKET				')'
+OPEN_CURLY_BRACKET			'{'
+CLOSE_CURLY_BRACKET			'}'
+OPEN_SQUARE_BRACKET			'['
+CLOSE_SQUARE_BRACKET		']'
+SEMI_COLON					';'
+COLON						':'
+AMPERSAND					'&'
+FULL_STOP					'\.'
+LESS_THAN					'<'
+GREATER_THAN				'>'
+EQUALS						'='
+PLUS						'\+'
+MINUS						'-'
+MULTIPLY					'*'
+DIVIDE						'/'
+ESCAPE						'\\'
+END_OF_LINE					'\n'
+END_OF_FILE					'\0'
+ESCAPE_SINGLE_QUOTES		'\\\''
+ESCAPE_DOUBLE_QUOTES		'\\\"'
+DOUBLE_QUOTES				'\"'
+SINGLE_QUOTES				'\''
+NOT							'!'
+NOT_EQUALS					'!='
+MODULUS						'%'
+LOGICAL_EQUALS				'=='
+LOGICAL_LESS_THAN_EQUALS	'<='
+TYPE						'int'|'char'|'double'|'float'|'void'
+TYPE_SPECIFIER_SIGNED		'signed'|'unsigned'
+TYPE_SPECIFIER_LENGTH		'short'|'long'
+TYPE_QUALIFIER 				'const'|'volatile'
+STRING_LITERAL				'\".*\"'
+UNDERSCORE 					'_'
+NAME						'[A-Za-z_][A-Za-z0-9_]*'
+
+%%
+
+{TYPE}" "+{NAME}									{return variable_dec(TYPE,NAME);}
+{NAME}												{return variable_use(NAME);}
+{AMPERSAND}{NAME}									{return variable_addr(NAME);}
+{TYPE}{POINTER}" "+{NAME}							{return variable_pointer_dec(TYPE,NAME);}
+{TYPE}" "+{POINTER}{NAME}							{return variable_pointer_dec(TYPE,NAME);}
+{TYPE_SPECIFIER_SIGNED}" "+({TYPE}" "+)?{NAME}		{return variable_signed_dec((TYPE,TYPE_SPECIFIER_SIGNED,NAME);}
+({TYPE_SPECIFIER_LENGTH}" "+)+({TYPE}" "+)?{NAME}	{return variable_length_dec((TYPE,TYPE_SPECIFIER_LENGTH,NAME);}
+.													{}
+
+%%
