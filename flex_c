@@ -33,20 +33,48 @@ LOGICAL_LESS_THAN_EQUALS	'<='
 TYPE						'int'|'char'|'double'|'float'|'void'
 TYPE_SPECIFIER_SIGNED		'signed'|'unsigned'
 TYPE_SPECIFIER_LENGTH		'short'|'long'
-TYPE_QUALIFIER 				'const'|'volatile'
+CONST_QUALIFIER 			'const'
+VOLATILE_QUALIFIER			'volatile'
+CHAR_LITERAL				'\'.*\''
 STRING_LITERAL				'\".*\"'
-UNDERSCORE 					'_'
 NAME						'[A-Za-z_][A-Za-z0-9_]*'
+NUMBER						'[0-9]+'
+CHAR						'\'[A-Za-z]\''
+STRUCT						'struct'
+AUTO						'auto'
+BREAK						'break'
+CONTINUE					'continue'
+CASE						'case'
+DEFAULT						'default'
+DO							'do'
+ELSE						'else'
+ENUM						'enum'
+EXTERN						'extern'
+FOR							'for'
+GOTO						'goto'
+IF							'if'
+REGISTER					'register'
+RETURN						'return'
+SIZEOF						'sizeof'
+STATIC						'static'
+SWITCH						'switch'
+TYPEDEF						'typedef'
+UNION						'union'
+WHILE						'while'
 
 %%
 
-{TYPE}" "+{NAME}									{return variable_dec(TYPE,NAME);}
-{NAME}												{return variable_use(NAME);}
-{AMPERSAND}{NAME}									{return variable_addr(NAME);}
-{TYPE}{POINTER}" "+{NAME}							{return variable_pointer_dec(TYPE,NAME);}
-{TYPE}" "+{POINTER}{NAME}							{return variable_pointer_dec(TYPE,NAME);}
-{TYPE_SPECIFIER_SIGNED}" "+({TYPE}" "+)?{NAME}		{return variable_signed_dec((TYPE,TYPE_SPECIFIER_SIGNED,NAME);}
-({TYPE_SPECIFIER_LENGTH}" "+)+({TYPE}" "+)?{NAME}	{return variable_length_dec((TYPE,TYPE_SPECIFIER_LENGTH,NAME);}
+{TYPE}												{return TYPE_T(yytext);}
+{NAME}												{return NAME_T(yytext);}
+{NUMBER}											{return INT_T(yytext);}
+{NUMBER}{FULL_STOP}{NUMBER}							{return FLOAT_T(yytext);}
+{CHAR}												{return CHAR_T(yytext);}
+{POINTER}											{return POINTER_T;}
+{STRUCT}											{return STRUCT_T;}
+{NAME}{FULL_STOP}{NAME}								{return MEMBER_T(yytext);}
+{TYPE_SPECIFIER_SIGNED}								{return TYPE_SIGNED_T(yytext);}
+{TYPE_SPECIFIER_LENGTH}								{return TYPE_LENGTH_T(yytext);}
+{STRING_LITERAL}|{CHAR_LITERAL}						{return STRING_T(yytext);}
 .													{}
 
 %%
