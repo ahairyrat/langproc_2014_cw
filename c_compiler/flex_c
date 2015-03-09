@@ -4,7 +4,7 @@
 %array
 %option nounistd
 %option never-interactive
-
+e
 %{
 // Add all include headers for the footer here
 	#include "FlexDef.h"
