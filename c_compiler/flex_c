@@ -1,0 +1,150 @@
+
+//Must have all comments and preprocessor instructions removed beforehand
+
+%array
+%option nounistd
+%option never-interactive
+
+%{
+// Add all include headers for the footer here
+	#include "FlexDef.h"
+
+%}
+
+AMPERSAND					\&
+AUTO						auto
+BREAK						break
+CASE						case
+CHAR_LITERAL				'.*'
+CLOSE_BRACKET				\)
+CLOSE_CURLY_BRACKET			\}
+CLOSE_SQUARE_BRACKET		\]
+COLON						:
+COMMA						,
+CONST_QUALIFIER 			const
+CONTINUE					continue
+DEFAULT						default
+DIVIDE						/
+DO							do
+ELSE						else
+END_OF_FILE					\0
+END_OF_LINE					\n
+ENUM						enum
+EQUALS						=
+EXTERN						extern
+FOR							for
+FULL_STOP					\.
+GOTO						goto
+GREATER_THAN				>
+IF							if
+LESS_THAN					<
+MINUS						-
+MODULUS						%
+MULTIPLY					\*
+NAME						[A-Za-z_][A-Za-z0-9_]*
+NOT							!
+NUMBER						[0-9]+
+OPEN_BRACKET				\(
+OPEN_CURLY_BRACKET			\{
+OPEN_SQUARE_BRACKET			\[
+OR							\|
+PLUS						\+
+QUESTION_MARK				?
+REGISTER					register
+RETURN						return
+SEMI_COLON					;
+SIZEOF						sizeof
+SPACE						 
+STATIC						static
+STRING_LITERAL				".*"
+STRUCT						struct
+SWITCH						switch
+TAB							\t
+TILDE						~
+TYPE						int|char|double|float|void
+TYPEDEF						typedef
+TYPE_SPECIFIER_LENGTH		short|long
+TYPE_SPECIFIER_SIGNED		signed|unsigned
+UNION						union
+VOLATILE_QUALIFIER			volatile
+WHILE						while
+XOR							\^
+
+%%
+
+
+{AMPERSAND}											{return ADDRESS_OR_BITWISE_AND_T;}
+{AMPERSAND}{AMPERSAND}								{return LOGICAL_AND_T;}
+{AUTO}												{return AUTO_T;}
+{BREAK}												{return BREAK_T;}
+{CASE}												{return CASE_T;}
+{CHAR_LITERAL}										{return CHAR_T{YYText()};}
+{CLOSE_BRACKET}										{return CLOSE_BRACKET_T;}
+{CLOSE_CURLY_BRACKET}								{return CLOSE_CURLY_BRACKET_T;}
+{CLOSE_SQUARE_BRACKET}								{return CLOSE_SQUARE_BRACKET_T;}
+{COLON}												{return COLON_T;}
+{COMMA}												{return COMMA_T;}
+{CONST_QUALIFIER} 									{return CONST_T;}
+{CONTINUE}											{return CONTINUE_T;}
+{DEFAULT}											{return DEFAULT_T;}
+{DIVIDE}|{MODULUS}|{PLUS}|{MINUS}					{return ARITHMETIC_T{YYText()};}
+{DO}												{return DO_T;}
+{ELSE}												{return ELSE_T;}
+{END_OF_FILE}										{return EOF_T;}
+{ENUM}												{return ENUM_T;}
+{EQUALS}{EQUALS}									{return LOGICAL_EQUALS_T;}
+{EXTERN}											{return EXTERN_T;}
+{FOR}												{return FOR_T;}
+{FULL_STOP}											{return FULL_STOP_T;}
+{GOTO}												{return GOTO_T;}
+{GREATER_THAN}										{return GREATER_THAN_T;}
+{GREATER_THAN}{EQUALS}								{return GREATER_THAN_EQUALS_T;}
+{GREATER_THAN}{GREATER_THAN}						{return BITWISE_RIGHT_T;}
+{IF}												{return IF_T;}
+{LESS_THAN}											{return LESS_THAN_T;}
+{LESS_THAN}{EQUALS}									{return LESS_THAN_EQUALS_T;}
+{LESS_THAN}{LESS_THAN}								{return BITWISE_LEFT_T;}
+{MINUS}{GREATER_THAN}								{return POINTER_MEMBER_T;}
+{MINUS}{MINUS}										{return DECREMENT_T;}
+{MINUS}{NAME}										{return INVERSE_T{YYText()};}
+{MULTIPLY}											{return MULT_OR_POINTER_T;}
+{NAME}												{return NAME_T{YYText()};}
+{NOT}												{return NOT_T;}
+{NOT}{EQUALS}										{return NOT_EQUALS_T;}
+{NUMBER}											{return INT_T{YYText()};}
+{NUMBER}{FULL_STOP}{NUMBER}							{return FLOAT_T{YYText()};}
+{OPEN_BRACKET}										{return OPEN_BRACKET_T;}
+{OPEN_CURLY_BRACKET}								{return OPEN_CURLY_BRACKET_T;}
+{OPEN_SQUARE_BRACKET}								{return OPEN_SQUARE_BRACKET_T;}
+{OR}												{return BITWISE_OR_T;}
+{OR}{OR}											{return LOGICAL_OR_T;}
+{PLUS}{NAME}										{return TYPE_PROMOTION_T{YYText()};}
+{PLUS}{PLUS}										{return INCREMENT_T;}
+{QUESTION_MARK}										{return CONDITIONAL_OPERATOR;}
+{REGISTER}											{return REGISTER_T;}
+{RETURN}											{return RETURN_T;}
+{SEMI_COLON}										{return EOS_T;}
+{SIZEOF}											{return SIZEOF_T;}
+{SPACE}|{TAB}										{}									//Consumes all whitespace
+{STATIC}											{return STATIC_T;}
+{STRING_LITERAL}|{CHAR_LITERAL}						{return STRING_T{YYText()};}
+{STRUCT}											{return STRUCT_T;}
+{SWITCH}											{return SWITCH_T;}
+{TILDE}												{return BITWISE_INVERSE_T;}
+{TYPEDEF}											{return TYPEDEF_T;}
+{TYPE_SPECIFIER_LENGTH}								{return TYPE_LENGTH_T{YYText()};}
+{TYPE_SPECIFIER_SIGNED}								{return TYPE_SIGNED_T{YYText()};}
+{TYPE}												{return TYPE_T{YYText()};}
+{UNION}												{return UNION_T;}
+{VOLATILE_QUALIFIER}								{return VOLATILE_T;}
+{WHILE}												{return WHILE_T;}
+{XOR}												{return BITWISE_XOR_T;}
+
+({PLUS}|{MINUS}|{MULTIPLY}|{DIVIDE}|{MODULUS}|
+	{LESS_THAN}{LESS_THAN}|{GREATER_THAN}{GREATER_THAN}|
+	{AMPERSAND}|{XOR}|{OR}){EQUALS}					{return COMPUND_T{YYText()};}
+	
+.                    								{return UNKNOWN;}
+
+
+%%

@@ -1,0 +1,77 @@
+
+#ifndef	_FLEX_DEFS_H
+#define	_FLEX_DEFS_H
+
+struct {
+	char*		Data = null;
+} flex_def;
+
+flex_def	ADDRESS_OR_BITWISE_AND_T;
+flex_def	ARITHMETIC_T;
+flex_def	AUTO_T;
+flex_def	BITWISE_INVERSE_T;
+flex_def	BITWISE_LEFT_T;
+flex_def	BITWISE_OR_T;
+flex_def	BITWISE_RIGHT_T;
+flex_def	BITWISE_XOR_T;
+flex_def	BREAK_T;
+flex_def	CASE_T;
+flex_def	CHAR_T;
+flex_def	CLOSE_BRACKET_T;
+flex_def	CLOSE_CURLY_BRACKET_T;
+flex_def	CLOSE_SQUARE_BRACKET_T;
+flex_def	COLON_T;
+flex_def	COMMA_T;
+flex_def	CONDITIONAL_OPERATOR;
+flex_def	CONST_T;
+flex_def	CONTINUE_T;
+flex_def	DECREMENT_T;
+flex_def	DEFAULT_T;
+flex_def	DO_T;
+flex_def	ELSE_T;
+flex_def	ENUM_T;
+flex_def	EOF_T;
+flex_def	EOS_T;
+flex_def	EXTERN_T;
+flex_def	FLOAT_T;
+flex_def	FOR_T;
+flex_def	FULL_STOP_T;
+flex_def	GOTO_T;
+flex_def	GREATER_THAN_EQUALS_T;
+flex_def	GREATER_THAN_T;
+flex_def	IF_T;
+flex_def	INCREMENT_T;
+flex_def	INT_T;
+flex_def	INVERSE_T;
+flex_def	LESS_THAN_EQUALS_T;
+flex_def	LESS_THAN_T;
+flex_def	LOGICAL_AND_T;
+flex_def	LOGICAL_EQUALS_T;
+flex_def	LOGICAL_OR_T;
+flex_def	MULT_OR_POINTER_T;
+flex_def	NAME_T;
+flex_def	NOT_EQUALS_T;
+flex_def	NOT_T;
+flex_def	OPEN_BRACKET_T;
+flex_def	OPEN_CURLY_BRACKET_T;
+flex_def	OPEN_SQUARE_BRACKET_T;
+flex_def	POINTER_MEMBER_T;
+flex_def	REGISTER_T;
+flex_def	RETURN_T;
+flex_def	SIZEOF_T;
+flex_def	STATIC_T;
+flex_def	STRING_T;
+flex_def	STRUCT_T;
+flex_def	STRUCT_T;
+flex_def	SWITCH_T;
+flex_def	TYPEDEF_T;
+flex_def	TYPE_LENGTH_T;
+flex_def	TYPE_PROMOTION_T;
+flex_def	TYPE_SIGNED_T;
+flex_def	TYPE_T;
+flex_def	UNION_T;
+flex_def	UNKNOWN;
+flex_def	VOLATILE_T;
+flex_def	WHILE_T;
+	
+#endif
