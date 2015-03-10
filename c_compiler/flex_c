@@ -14,7 +14,11 @@
 	
 	using namespace std;
 	
+	#ifdef DEBUG
 	vector<flex_def> tokens;
+	#else
+	extern vector<flex_def> tokens;
+	#endif
 
 %}
 
