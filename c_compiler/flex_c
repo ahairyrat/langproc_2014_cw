@@ -69,11 +69,11 @@ UNION							union
 VOLATILE_QUALIFIER				volatile
 WHILE							while
 XOR								\^
-NUMBER_ID						0[a-zA-Z]
+NUMBER_ID						(0[a-zA-Z])
 
 %%
 
-
+	/*Compare for individual tokens*/ 
 {AMPERSAND}									tokens.push({ADDRESS_OR_BITWISE_AND_T,null});
 {AMPERSAND}{AMPERSAND}						tokens.push({LOGICAL_AND_T,null});
 {AUTO}										tokens.push({AUTO_T,null});
@@ -111,8 +111,6 @@ NUMBER_ID						0[a-zA-Z]
 {MULTIPLY}									tokens.push({MULT_OR_POINTER_T,null});
 {NOT}										tokens.push({NOT_T,null});
 {NOT}{EQUALS}								tokens.push({NOT_EQUALS_T,null});
-{NUMBER_ID}?{NUMBER}L?						tokens.push({INT_T,YText()});
-{NUMBER}{FULL_STOP}{NUMBER}L?				tokens.push({FLOAT_T,lexer.YYText()});
 {OPEN_BRACKET}								tokens.push({OPEN_BRACKET_T,null});
 {OPEN_CURLY_BRACKET}						tokens.push({OPEN_CURLY_BRACKET_T,null});
 {OPEN_SQUARE_BRACKET}						tokens.push({OPEN_SQUARE_BRACKET_T,null});
@@ -138,6 +136,10 @@ NUMBER_ID						0[a-zA-Z]
 {VOLATILE_QUALIFIER}						tokens.push({VOLATILE_T,null});
 {WHILE}										tokens.push({WHILE_T,null});
 {XOR}										tokens.push({BITWISE_XOR_T,null});
+
+	/*The following values may match any of the above so it is best to seperate them*/ 
+{NUMBER_ID}?{NUMBER}L?						tokens.push({INT_T,YText()});
+{NUMBER}{FULL_STOP}{NUMBER}L?				tokens.push({FLOAT_T,lexer.YYText()});
 {ID}										tokens.push({ID_T,lexer.YYText()});
 [ \t\n]+									/*Consumes all whitespace*/
 .                    						return UNKNOWN;
