@@ -148,7 +148,7 @@ NUMBER_ID						(0[a-zA-Z])
 
 %%
 
-bool lex(string*)
+int main()
 {
     yyFlexLexer lexer;
 	flex_def lexcode;

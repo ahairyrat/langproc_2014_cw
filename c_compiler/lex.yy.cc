@@ -2056,7 +2056,7 @@ void yyfree (void * ptr )
 
 
 
-bool lex(string*)
+int main()
 {
     yyFlexLexer lexer;
 	flex_def lexcode;
