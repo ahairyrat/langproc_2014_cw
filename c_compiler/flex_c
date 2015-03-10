@@ -1,14 +1,16 @@
 
 /*Must have all comments and preprocessor instructions removed beforehand*/
 
-%option nounistd
 %option noyywrap
-%option never-interactive
 
 %{
 	/* Add all include headers for the footer here*/
-	#include "FlexDef.h"
+	
+	#define DEBUG
+	
+	#include "./includes/FlexDef.h"
 	#include <vector>
+	#include <iostream>
 	
 	using namespace std;
 	
@@ -71,92 +73,109 @@ UNION							union
 VOLATILE_QUALIFIER				volatile
 WHILE							while
 XOR								\^
-NUMBER_ID						(0[a-zA-Z])
+NUMBER_ID						0[a-zA-Z]
 
 %%
 
-	/*Compare for individual tokens*/ 
-{AMPERSAND}									tokens.push({ADDRESS_OR_BITWISE_AND_T,NULL});
-{AMPERSAND}{AMPERSAND}						tokens.push({LOGICAL_AND_T,NULL});
-{AUTO}										tokens.push({AUTO_T,NULL});
-{BREAK}										tokens.push({BREAK_T,NULL});
-{CASE}										tokens.push({CASE_T,NULL});
-{CHAR_LITERAL}								tokens.push({CHAR_T,YYText()});
-{CLOSE_BRACKET}								tokens.push({CLOSE_BRACKET_T,NULL});
-{CLOSE_CURLY_BRACKET}						tokens.push({CLOSE_CURLY_BRACKET_T,NULL});
-{CLOSE_SQUARE_BRACKET}						tokens.push({CLOSE_SQUARE_BRACKET_T,NULL});
-{COLON}										tokens.push({COLON_T,NULL});
-{COMMA}										tokens.push({COMMA_T,NULL});
-{CONST_QUALIFIER} 							tokens.push({CONST_T,NULL});
-{CONTINUE}									tokens.push({CONTINUE_T,NULL});
-{DEFAULT}									tokens.push({DEFAULT_T,NULL});
-{DIVIDE}|{MODULUS}|{PLUS}|{MINUS}			tokens.push({ARITHMETIC_T,YYText()});
-{DO}										tokens.push({DO_T,NULL});
-{ELLIPSES}									tokens.push({ELLIPSES_T,NULL});
-{ELSE}										tokens.push({ELSE_T,NULL});
-{ENUM}										tokens.push({ENUM_T,NULL});
-{EQUALS}{EQUALS}							tokens.push({LOGICAL_EQUALS_T,NULL});
-{EXTERN}									tokens.push({EXTERN_T,NULL});
-{FOR}										tokens.push({FOR_T,NULL});
-{FULL_STOP}									tokens.push({FULL_STOP_T,NULL});
-{GOTO}										tokens.push({GOTO_T,NULL});
-{GREATER_THAN}								tokens.push({GREATER_THAN_T,NULL});
-{GREATER_THAN}{EQUALS}						tokens.push({GREATER_THAN_EQUALS_T,NULL});
-{GREATER_THAN}{GREATER_THAN}				tokens.push({BITWISE_RIGHT_T,NULL});
-{IF}										tokens.push({IF_T,NULL});
-{LESS_THAN}									tokens.push({LESS_THAN_T,NULL});
-{LESS_THAN}{EQUALS}							tokens.push({LESS_THAN_EQUALS_T,NULL});
-{LESS_THAN}{LESS_THAN}						tokens.push({BITWISE_LEFT_T,NULL});
-{MINUS}{GREATER_THAN}						tokens.push({POINTER_MEMBER_T,NULL});
-{MINUS}{ID}									tokens.push({INVERSE_T,YYText()});
-{MINUS}{MINUS}								tokens.push({DECREMENT_T,NULL});
-{MULTIPLY}									tokens.push({MULT_OR_POINTER_T,NULL});
-{NOT}										tokens.push({NOT_T,NULL});
-{NOT}{EQUALS}								tokens.push({NOT_EQUALS_T,NULL});
-{OPEN_BRACKET}								tokens.push({OPEN_BRACKET_T,NULL});
-{OPEN_CURLY_BRACKET}						tokens.push({OPEN_CURLY_BRACKET_T,NULL});
-{OPEN_SQUARE_BRACKET}						tokens.push({OPEN_SQUARE_BRACKET_T,NULL});
-{OR}										tokens.push({BITWISE_OR_T,NULL});
-{OR}{OR}									tokens.push({LOGICAL_OR_T,NULL});
-{PLUS}{ID}									tokens.push({TYPE_PROMOTION_T,YYText()});
-{PLUS}{PLUS}								tokens.push({INCREMENT_T,NULL});
-{QUESTION_MARK}								tokens.push({CONDITIONAL_OPERATOR,NULL});
-{REGISTER}									tokens.push({REGISTER_T,NULL});
-{RETURN}									tokens.push({RETURN_T,NULL});
-{SEMI_COLON}								tokens.push({EOS_T,NULL});
-{SIZEOF}									tokens.push({SIZEOF_T,NULL});
-{STATIC}									tokens.push({STATIC_T,NULL});
-{STRING_LITERAL}|{CHAR_LITERAL}				tokens.push({STRING_T,YYText()});
-{STRUCT}									tokens.push({STRUCT_T,NULL});
-{SWITCH}									tokens.push({SWITCH_T,NULL});
-{TILDE}										tokens.push({BITWISE_INVERSE_T,NULL});
-{TYPEDEF}									tokens.push({TYPEDEF_T,NULL});
-{TYPE_SPECIFIER_LENGTH}						tokens.push({TYPE_LENGTH_T,YYText()});
-{TYPE_SPECIFIER_SIGNED}						tokens.push({TYPE_SIGNED_T,YYText()});
-{TYPE}										tokens.push({TYPE_T,YYText()});
-{UNION}										tokens.push({UNION_T,NULL});
-{VOLATILE_QUALIFIER}						tokens.push({VOLATILE_T,NULL});
-{WHILE}										tokens.push({WHILE_T,NULL});
-{XOR}										tokens.push({BITWISE_XOR_T,NULL});
+	/*Compare for individual tokens*/
+{AMPERSAND}									{flex_def def(ADDRESS_OR_BITWISE_AND_T,YYText());tokens.push_back(def);}
+{AMPERSAND}{AMPERSAND}						{flex_def def(LOGICAL_AND_T,YYText());tokens.push_back(def);}
+{AUTO}										{flex_def def(AUTO_T,YYText());tokens.push_back(def);}
+{BREAK}										{flex_def def(BREAK_T,YYText());tokens.push_back(def);}
+{CASE}										{flex_def def(CASE_T,YYText());tokens.push_back(def);}
+{CHAR_LITERAL}								{flex_def def(CHAR_T,YYText());tokens.push_back(def);}
+{CLOSE_BRACKET}								{flex_def def(CLOSE_BRACKET_T,YYText());tokens.push_back(def);}
+{CLOSE_CURLY_BRACKET}						{flex_def def(CLOSE_CURLY_BRACKET_T,YYText());tokens.push_back(def);}
+{CLOSE_SQUARE_BRACKET}						{flex_def def(CLOSE_SQUARE_BRACKET_T,YYText());tokens.push_back(def);}
+{COLON}										{flex_def def(COLON_T,YYText());tokens.push_back(def);}
+{COMMA}										{flex_def def(COMMA_T,YYText());tokens.push_back(def);}
+{CONST_QUALIFIER} 							{flex_def def(CONST_T,YYText());tokens.push_back(def);}
+{CONTINUE}									{flex_def def(CONTINUE_T,YYText());tokens.push_back(def);}
+{DEFAULT}									{flex_def def(DEFAULT_T,YYText());tokens.push_back(def);}
+{DIVIDE}|{MODULUS}|{PLUS}|{MINUS}			{flex_def def(ARITHMETIC_T,YYText());tokens.push_back(def);}
+{DO}										{flex_def def(DO_T,YYText());tokens.push_back(def);}
+{ELLIPSES}									{flex_def def(ELLIPSES_T,YYText());tokens.push_back(def);}
+{ELSE}										{flex_def def(ELSE_T,YYText());tokens.push_back(def);}
+{ENUM}										{flex_def def(ENUM_T,YYText());tokens.push_back(def);}
+{EQUALS}									{flex_def def(EQUALS_T,YYText());tokens.push_back(def);}
+{EQUALS}{EQUALS}							{flex_def def(LOGICAL_EQUALS_T,YYText());tokens.push_back(def);}
+{EXTERN}									{flex_def def(EXTERN_T,YYText());tokens.push_back(def);}
+{FOR}										{flex_def def(FOR_T,YYText());tokens.push_back(def);}
+{FULL_STOP}									{flex_def def(FULL_STOP_T,YYText());tokens.push_back(def);}
+{GOTO}										{flex_def def(GOTO_T,YYText());tokens.push_back(def);}
+{GREATER_THAN}								{flex_def def(GREATER_THAN_T,YYText());tokens.push_back(def);}
+{GREATER_THAN}{EQUALS}						{flex_def def(GREATER_THAN_EQUALS_T,YYText());tokens.push_back(def);}
+{GREATER_THAN}{GREATER_THAN}				{flex_def def(BITWISE_RIGHT_T,YYText());tokens.push_back(def);}
+{IF}										{flex_def def(IF_T,YYText());tokens.push_back(def);}
+{LESS_THAN}									{flex_def def(LESS_THAN_T,YYText());tokens.push_back(def);}
+{LESS_THAN}{EQUALS}							{flex_def def(LESS_THAN_EQUALS_T,YYText());tokens.push_back(def);}
+{LESS_THAN}{LESS_THAN}						{flex_def def(BITWISE_LEFT_T,YYText());tokens.push_back(def);}
+{MINUS}{GREATER_THAN}						{flex_def def(POINTER_MEMBER_T,YYText());tokens.push_back(def);}
+{MINUS}{ID}									{flex_def def(INVERSE_T,YYText());tokens.push_back(def);}
+{MINUS}{MINUS}								{flex_def def(DECREMENT_T,YYText());tokens.push_back(def);}
+{MULTIPLY}									{flex_def def(MULT_OR_POINTER_T,YYText());tokens.push_back(def);}
+{NOT}										{flex_def def(NOT_T,YYText());tokens.push_back(def);}
+{NOT}{EQUALS}								{flex_def def(NOT_EQUALS_T,YYText());tokens.push_back(def);}
+{OPEN_BRACKET}								{flex_def def(OPEN_BRACKET_T,YYText());tokens.push_back(def);}
+{OPEN_CURLY_BRACKET}						{flex_def def(OPEN_CURLY_BRACKET_T,YYText());tokens.push_back(def);}
+{OPEN_SQUARE_BRACKET}						{flex_def def(OPEN_SQUARE_BRACKET_T,YYText());tokens.push_back(def);}
+{OR}										{flex_def def(BITWISE_OR_T,YYText());tokens.push_back(def);}
+{OR}{OR}									{flex_def def(LOGICAL_OR_T,YYText());tokens.push_back(def);}
+{PLUS}{ID}									{flex_def def(TYPE_PROMOTION_T,YYText());tokens.push_back(def);}
+{PLUS}{PLUS}								{flex_def def(INCREMENT_T,YYText());tokens.push_back(def);}
+{QUESTION_MARK}								{flex_def def(CONDITIONAL_OPERATOR,YYText());tokens.push_back(def);}
+{REGISTER}									{flex_def def(REGISTER_T,YYText());tokens.push_back(def);}
+{RETURN}									{flex_def def(RETURN_T,YYText());tokens.push_back(def);}
+{SEMI_COLON}								{flex_def def(EOS_T,YYText());tokens.push_back(def);}
+{SIZEOF}									{flex_def def(SIZEOF_T,YYText());tokens.push_back(def);}
+{STATIC}									{flex_def def(STATIC_T,YYText());tokens.push_back(def);}
+{STRING_LITERAL}|{CHAR_LITERAL}				{flex_def def(STRING_T,YYText());tokens.push_back(def);}
+{STRUCT}									{flex_def def(STRUCT_T,YYText());tokens.push_back(def);}
+{SWITCH}									{flex_def def(SWITCH_T,YYText());tokens.push_back(def);}
+{TILDE}										{flex_def def(BITWISE_INVERSE_T,YYText());tokens.push_back(def);}
+{TYPEDEF}									{flex_def def(TYPEDEF_T,YYText());tokens.push_back(def);}
+{TYPE_SPECIFIER_LENGTH}						{flex_def def(TYPE_LENGTH_T,YYText());tokens.push_back(def);}
+{TYPE_SPECIFIER_SIGNED}						{flex_def def(TYPE_SIGNED_T,YYText());tokens.push_back(def);}
+{TYPE}										{flex_def def(TYPE_T,YYText());tokens.push_back(def);}
+{UNION}										{flex_def def(UNION_T,YYText());tokens.push_back(def);}
+{VOLATILE_QUALIFIER}						{flex_def def(VOLATILE_T,YYText());tokens.push_back(def);}
+{WHILE}										{flex_def def(WHILE_T,YYText());tokens.push_back(def);}
+{XOR}										{flex_def def(BITWISE_XOR_T,YYText());tokens.push_back(def);}
 
-	/*The following values may match any of the above so it is best to seperate them*/ 
-{NUMBER_ID}?{NUMBER}L?						tokens.push({INT_T,YYText()});
-{NUMBER}{FULL_STOP}{NUMBER}L?				tokens.push({FLOAT_T,YYText()});
-{ID}										tokens.push({ID_T,YYText()});
+	/*The following values may match any of the above so it is best to seperate them*/
+{ID}										{flex_def def(ID_T,YYText());tokens.push_back(def);}
+{NUMBER_ID}?{NUMBER}L?						{flex_def def(INT_T,YYText());tokens.push_back(def);}
+{NUMBER}{FULL_STOP}{NUMBER}L?				{flex_def def(FLOAT_T,YYText());tokens.push_back(def);}
 [ \t\n]+									/*Consumes all whitespace*/
 .                    						return UNKNOWN;
 
 %%
 
+#ifdef DEBUG
 int main()
+#else
+bool lex()
+#endif
 {
+
+
     yyFlexLexer lexer;
-	flex_def lexcode;
-    do{
+	int lexcode;
+	lexcode = lexer.yylex();
+	while(lexcode != 0){
 		lexcode = lexer.yylex();
 		if(lexcode == UNKNOWN)
+			#ifdef DEBUG
+			break;
+			#else
 			return false;
-		}while(lexcode != 0);
-
+			#endif
+	}
+	#ifdef DEBUG
+    for(int i=0; i < tokens.size(); i++)
+    	cout << hex <<  tokens[i].Data << " ";
+    return 0;
+    #else
     return true;
+    #endif
 }

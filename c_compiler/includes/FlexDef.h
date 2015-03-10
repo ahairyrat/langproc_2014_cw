@@ -2,12 +2,7 @@
 #ifndef	_structS_H
 #define	_structS_H
 
-struct {
-	flex_type	name = UNKNOWN;
-	char*		Data = NULL;
-} flex_def;
-
-enum{
+enum  flex_type{
 	ADDRESS_OR_BITWISE_AND_T	=	0x400,
 	ARITHMETIC_T				=	0x401,
 	AUTO_T						=	0x402,
@@ -33,6 +28,7 @@ enum{
 	ELLIPSES_T					=	0x465,
 	ELSE_T						=	0x422,
 	ENUM_T						=	0x423,
+	EQUALS_T					= 	0x466,
 	EOS_T						=	0x424,
 	EXTERN_T					=	0x425,
 	FLOAT_T						=	0x426,
@@ -74,6 +70,16 @@ enum{
 	UNKNOWN						=	0x800,
 	VOLATILE_T					=	0x463,
 	WHILE_T						=	0x464,
-} flex_type;
+};
+
+struct flex_def{
+	flex_type	name;
+	std::string		Data;
+
+	flex_def(flex_type name, const char* Data_in)
+	:name(name){
+		Data = Data_in;
+	}
+};
 	
 #endif
