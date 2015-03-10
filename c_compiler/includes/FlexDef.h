@@ -3,8 +3,8 @@
 #define	_structS_H
 
 struct {
-	flex_type	name = unknown;
-	char*		Data = null;
+	flex_type	name = UNKNOWN;
+	char*		Data = NULL;
 } flex_def;
 
 enum{
@@ -30,6 +30,7 @@ enum{
 	DECREMENT_T					=	0x419,
 	DEFAULT_T					=	0x420,
 	DO_T						=	0x421,
+	ELLIPSES_T					=	0x465,
 	ELSE_T						=	0x422,
 	ENUM_T						=	0x423,
 	EOS_T						=	0x424,
@@ -40,6 +41,7 @@ enum{
 	GOTO_T						=	0x429,
 	GREATER_THAN_EQUALS_T		=	0x430,
 	GREATER_THAN_T				=	0x431,
+	ID_T						=	0x443,
 	IF_T						=	0x432,
 	INCREMENT_T					=	0x434,
 	INT_T						=	0x435,
@@ -50,7 +52,6 @@ enum{
 	LOGICAL_EQUALS_T			=	0x440,
 	LOGICAL_OR_T				=	0x441,
 	MULT_OR_POINTER_T			=	0x442,
-	NAME_T						=	0x443,
 	NOT_EQUALS_T				=	0x444,
 	NOT_T						=	0x445,
 	OPEN_BRACKET_T				=	0x446,

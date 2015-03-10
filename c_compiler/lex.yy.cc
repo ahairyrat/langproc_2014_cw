@@ -622,9 +622,11 @@ static yyconst flex_int16_t yy_chk[644] =
 	#include "FlexDef.h"
 	#include <vector>
 	
+	using namespace std;
+	
 	vector<flex_def> tokens;
 
-#line 628 "lex.yy.cc"
+#line 630 "lex.yy.cc"
 
 #define INITIAL 0
 
@@ -724,11 +726,11 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 74 "flex_c"
+#line 76 "flex_c"
 
 
 	/*Compare for individual tokens*/ 
-#line 732 "lex.yy.cc"
+#line 734 "lex.yy.cc"
 
 	if ( !(yy_init) )
 		{
@@ -809,349 +811,349 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 77 "flex_c"
-tokens.push({ADDRESS_OR_BITWISE_AND_T,null});
+#line 79 "flex_c"
+tokens.push({ADDRESS_OR_BITWISE_AND_T,NULL});
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 78 "flex_c"
-tokens.push({LOGICAL_AND_T,null});
+#line 80 "flex_c"
+tokens.push({LOGICAL_AND_T,NULL});
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 79 "flex_c"
-tokens.push({AUTO_T,null});
+#line 81 "flex_c"
+tokens.push({AUTO_T,NULL});
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 80 "flex_c"
-tokens.push({BREAK_T,null});
+#line 82 "flex_c"
+tokens.push({BREAK_T,NULL});
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 81 "flex_c"
-tokens.push({CASE_T,null});
+#line 83 "flex_c"
+tokens.push({CASE_T,NULL});
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 82 "flex_c"
-tokens.push({CHAR_T,lexer.YYText()});
+#line 84 "flex_c"
+tokens.push({CHAR_T,YYText()});
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 83 "flex_c"
-tokens.push({CLOSE_BRACKET_T,null});
+#line 85 "flex_c"
+tokens.push({CLOSE_BRACKET_T,NULL});
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 84 "flex_c"
-tokens.push({CLOSE_CURLY_BRACKET_T,null});
+#line 86 "flex_c"
+tokens.push({CLOSE_CURLY_BRACKET_T,NULL});
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 85 "flex_c"
-tokens.push({CLOSE_SQUARE_BRACKET_T,null});
+#line 87 "flex_c"
+tokens.push({CLOSE_SQUARE_BRACKET_T,NULL});
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 86 "flex_c"
-tokens.push({COLON_T,null});
+#line 88 "flex_c"
+tokens.push({COLON_T,NULL});
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 87 "flex_c"
-tokens.push({COMMA_T,null});
+#line 89 "flex_c"
+tokens.push({COMMA_T,NULL});
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 88 "flex_c"
-tokens.push({CONST_T,null});
+#line 90 "flex_c"
+tokens.push({CONST_T,NULL});
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 89 "flex_c"
-tokens.push({CONTINUE_T,null});
+#line 91 "flex_c"
+tokens.push({CONTINUE_T,NULL});
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 90 "flex_c"
-tokens.push({DEFAULT_T,null});
+#line 92 "flex_c"
+tokens.push({DEFAULT_T,NULL});
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 91 "flex_c"
-tokens.push({ARITHMETIC_T,lexer.YYText()});
+#line 93 "flex_c"
+tokens.push({ARITHMETIC_T,YYText()});
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 92 "flex_c"
-tokens.push({DO_T,null});
+#line 94 "flex_c"
+tokens.push({DO_T,NULL});
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 93 "flex_c"
-tokens.push({ELLIPSES_T,null});
+#line 95 "flex_c"
+tokens.push({ELLIPSES_T,NULL});
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 94 "flex_c"
-tokens.push({ELSE_T,null});
+#line 96 "flex_c"
+tokens.push({ELSE_T,NULL});
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 95 "flex_c"
-tokens.push({ENUM_T,null});
+#line 97 "flex_c"
+tokens.push({ENUM_T,NULL});
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 96 "flex_c"
-tokens.push({LOGICAL_EQUALS_T,null});
+#line 98 "flex_c"
+tokens.push({LOGICAL_EQUALS_T,NULL});
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 97 "flex_c"
-tokens.push({EXTERN_T,null});
+#line 99 "flex_c"
+tokens.push({EXTERN_T,NULL});
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 98 "flex_c"
-tokens.push({FOR_T,null});
+#line 100 "flex_c"
+tokens.push({FOR_T,NULL});
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 99 "flex_c"
-tokens.push({FULL_STOP_T,null});
+#line 101 "flex_c"
+tokens.push({FULL_STOP_T,NULL});
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 100 "flex_c"
-tokens.push({GOTO_T,null});
+#line 102 "flex_c"
+tokens.push({GOTO_T,NULL});
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 101 "flex_c"
-tokens.push({GREATER_THAN_T,null});
+#line 103 "flex_c"
+tokens.push({GREATER_THAN_T,NULL});
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 102 "flex_c"
-tokens.push({GREATER_TAN_EQUALS_T,null});
+#line 104 "flex_c"
+tokens.push({GREATER_THAN_EQUALS_T,NULL});
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 103 "flex_c"
-tokens.push({BITWISE_RIGHT_T,null});
+#line 105 "flex_c"
+tokens.push({BITWISE_RIGHT_T,NULL});
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 104 "flex_c"
-tokens.push({IF_T,null});
+#line 106 "flex_c"
+tokens.push({IF_T,NULL});
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 105 "flex_c"
-tokens.push({LESS_THAN_T,null});
+#line 107 "flex_c"
+tokens.push({LESS_THAN_T,NULL});
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 106 "flex_c"
-tokens.push({LESS_TAN_EQUALS_T,null});
+#line 108 "flex_c"
+tokens.push({LESS_THAN_EQUALS_T,NULL});
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 107 "flex_c"
-tokens.push({BITWISE_LEFT_T,null});
+#line 109 "flex_c"
+tokens.push({BITWISE_LEFT_T,NULL});
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 108 "flex_c"
-tokens.push({POINTER_MEMBER_T,null});
+#line 110 "flex_c"
+tokens.push({POINTER_MEMBER_T,NULL});
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 109 "flex_c"
-tokens.push({INVERSE_T,lexer.YYText()});
+#line 111 "flex_c"
+tokens.push({INVERSE_T,YYText()});
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 110 "flex_c"
-tokens.push({DECREMENT_T,null});
+#line 112 "flex_c"
+tokens.push({DECREMENT_T,NULL});
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 111 "flex_c"
-tokens.push({MULT_OR_POINTER_T,null});
+#line 113 "flex_c"
+tokens.push({MULT_OR_POINTER_T,NULL});
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 112 "flex_c"
-tokens.push({NOT_T,null});
+#line 114 "flex_c"
+tokens.push({NOT_T,NULL});
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 113 "flex_c"
-tokens.push({NOT_EQUALS_T,null});
+#line 115 "flex_c"
+tokens.push({NOT_EQUALS_T,NULL});
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 114 "flex_c"
-tokens.push({OPEN_BRACKET_T,null});
+#line 116 "flex_c"
+tokens.push({OPEN_BRACKET_T,NULL});
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 115 "flex_c"
-tokens.push({OPEN_CURLY_BRACKET_T,null});
+#line 117 "flex_c"
+tokens.push({OPEN_CURLY_BRACKET_T,NULL});
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 116 "flex_c"
-tokens.push({OPEN_SQUARE_BRACKET_T,null});
+#line 118 "flex_c"
+tokens.push({OPEN_SQUARE_BRACKET_T,NULL});
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 117 "flex_c"
-tokens.push({BITWISE_OR_T,null});
+#line 119 "flex_c"
+tokens.push({BITWISE_OR_T,NULL});
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 118 "flex_c"
-tokens.push({LOGICAL_OR_T,null});
+#line 120 "flex_c"
+tokens.push({LOGICAL_OR_T,NULL});
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 119 "flex_c"
-tokens.push({TYPE_PROMOTION_T,lexer.YYText()});
+#line 121 "flex_c"
+tokens.push({TYPE_PROMOTION_T,YYText()});
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 120 "flex_c"
-tokens.push({INCREMENT_T,null});
+#line 122 "flex_c"
+tokens.push({INCREMENT_T,NULL});
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 121 "flex_c"
-tokens.push({CONDITIONAL_OPERATOR,null});
+#line 123 "flex_c"
+tokens.push({CONDITIONAL_OPERATOR,NULL});
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 122 "flex_c"
-tokens.push({REGISTER_T,null});
+#line 124 "flex_c"
+tokens.push({REGISTER_T,NULL});
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 123 "flex_c"
-tokens.push({RETURN_T,null});
+#line 125 "flex_c"
+tokens.push({RETURN_T,NULL});
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 124 "flex_c"
-tokens.push({EOS_T,null});
+#line 126 "flex_c"
+tokens.push({EOS_T,NULL});
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 125 "flex_c"
-tokens.push({SIZEOF_T,null});
+#line 127 "flex_c"
+tokens.push({SIZEOF_T,NULL});
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 126 "flex_c"
-tokens.push({STATIC_T,null});
+#line 128 "flex_c"
+tokens.push({STATIC_T,NULL});
 	YY_BREAK
 case 51:
 /* rule 51 can match eol */
 YY_RULE_SETUP
-#line 127 "flex_c"
-tokens.push({STRING_T,lexer.YYText()});
+#line 129 "flex_c"
+tokens.push({STRING_T,YYText()});
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 128 "flex_c"
-tokens.push({STRUCT_T,null});
+#line 130 "flex_c"
+tokens.push({STRUCT_T,NULL});
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 129 "flex_c"
-tokens.push({SWITCH_T,null});
+#line 131 "flex_c"
+tokens.push({SWITCH_T,NULL});
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 130 "flex_c"
-tokens.push({BITWISE_INVERSE_T,null});
+#line 132 "flex_c"
+tokens.push({BITWISE_INVERSE_T,NULL});
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 131 "flex_c"
-tokens.push({TYPEDEF_T,null});
+#line 133 "flex_c"
+tokens.push({TYPEDEF_T,NULL});
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 132 "flex_c"
-tokens.push({TYPE_LENGTH_T,YText()});
+#line 134 "flex_c"
+tokens.push({TYPE_LENGTH_T,YYText()});
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 133 "flex_c"
-tokens.push({TYPE_SIGNED_T,lexer.YYText()});
+#line 135 "flex_c"
+tokens.push({TYPE_SIGNED_T,YYText()});
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 134 "flex_c"
-tokens.push({TYPE_T,lexer.YYText()});
+#line 136 "flex_c"
+tokens.push({TYPE_T,YYText()});
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 135 "flex_c"
-tokens.push({UNION_T,null});
+#line 137 "flex_c"
+tokens.push({UNION_T,NULL});
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 136 "flex_c"
-tokens.push({VOLATILE_T,null});
+#line 138 "flex_c"
+tokens.push({VOLATILE_T,NULL});
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 137 "flex_c"
-tokens.push({WHILE_T,null});
+#line 139 "flex_c"
+tokens.push({WHILE_T,NULL});
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 138 "flex_c"
-tokens.push({BITWISE_XOR_T,null});
+#line 140 "flex_c"
+tokens.push({BITWISE_XOR_T,NULL});
 	YY_BREAK
 /*The following values may match any of the above so it is best to seperate them*/ 
 case 63:
 YY_RULE_SETUP
-#line 141 "flex_c"
-tokens.push({INT_T,YText()});
+#line 143 "flex_c"
+tokens.push({INT_T,YYText()});
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 142 "flex_c"
-tokens.push({FLOAT_T,lexer.YYText()});
+#line 144 "flex_c"
+tokens.push({FLOAT_T,YYText()});
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 143 "flex_c"
-tokens.push({ID_T,lexer.YYText()});
+#line 145 "flex_c"
+tokens.push({ID_T,YYText()});
 	YY_BREAK
 case 66:
 /* rule 66 can match eol */
 YY_RULE_SETUP
-#line 144 "flex_c"
+#line 146 "flex_c"
 /*Consumes all whitespace*/
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 145 "flex_c"
+#line 147 "flex_c"
 return UNKNOWN;
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 147 "flex_c"
+#line 149 "flex_c"
 ECHO;
 	YY_BREAK
-#line 1155 "lex.yy.cc"
+#line 1157 "lex.yy.cc"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2050,19 +2052,20 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 147 "flex_c"
+#line 149 "flex_c"
 
 
 
-bool lex(String*)
+bool lex(string*)
 {
     yyFlexLexer lexer;
 	flex_def lexcode;
     do{
 		lexcode = lexer.yylex();
-		lexcode == UNKNOWN?return false:;
+		if(lexcode == UNKNOWN)
+			return false;
 		}while(lexcode != 0);
 
-    return 0;
+    return true;
 }
 
