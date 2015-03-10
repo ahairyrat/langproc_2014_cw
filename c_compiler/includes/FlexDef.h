@@ -1,77 +1,78 @@
 
-#ifndef	_FLEX_DEFS_H
-#define	_FLEX_DEFS_H
+#ifndef	_structS_H
+#define	_structS_H
 
 struct {
+	flex_type	name = unknown;
 	char*		Data = null;
 } flex_def;
 
-flex_def	ADDRESS_OR_BITWISE_AND_T;
-flex_def	ARITHMETIC_T;
-flex_def	AUTO_T;
-flex_def	BITWISE_INVERSE_T;
-flex_def	BITWISE_LEFT_T;
-flex_def	BITWISE_OR_T;
-flex_def	BITWISE_RIGHT_T;
-flex_def	BITWISE_XOR_T;
-flex_def	BREAK_T;
-flex_def	CASE_T;
-flex_def	CHAR_T;
-flex_def	CLOSE_BRACKET_T;
-flex_def	CLOSE_CURLY_BRACKET_T;
-flex_def	CLOSE_SQUARE_BRACKET_T;
-flex_def	COLON_T;
-flex_def	COMMA_T;
-flex_def	CONDITIONAL_OPERATOR;
-flex_def	CONST_T;
-flex_def	CONTINUE_T;
-flex_def	DECREMENT_T;
-flex_def	DEFAULT_T;
-flex_def	DO_T;
-flex_def	ELSE_T;
-flex_def	ENUM_T;
-flex_def	EOF_T;
-flex_def	EOS_T;
-flex_def	EXTERN_T;
-flex_def	FLOAT_T;
-flex_def	FOR_T;
-flex_def	FULL_STOP_T;
-flex_def	GOTO_T;
-flex_def	GREATER_THAN_EQUALS_T;
-flex_def	GREATER_THAN_T;
-flex_def	IF_T;
-flex_def	INCREMENT_T;
-flex_def	INT_T;
-flex_def	INVERSE_T;
-flex_def	LESS_THAN_EQUALS_T;
-flex_def	LESS_THAN_T;
-flex_def	LOGICAL_AND_T;
-flex_def	LOGICAL_EQUALS_T;
-flex_def	LOGICAL_OR_T;
-flex_def	MULT_OR_POINTER_T;
-flex_def	NAME_T;
-flex_def	NOT_EQUALS_T;
-flex_def	NOT_T;
-flex_def	OPEN_BRACKET_T;
-flex_def	OPEN_CURLY_BRACKET_T;
-flex_def	OPEN_SQUARE_BRACKET_T;
-flex_def	POINTER_MEMBER_T;
-flex_def	REGISTER_T;
-flex_def	RETURN_T;
-flex_def	SIZEOF_T;
-flex_def	STATIC_T;
-flex_def	STRING_T;
-flex_def	STRUCT_T;
-flex_def	STRUCT_T;
-flex_def	SWITCH_T;
-flex_def	TYPEDEF_T;
-flex_def	TYPE_LENGTH_T;
-flex_def	TYPE_PROMOTION_T;
-flex_def	TYPE_SIGNED_T;
-flex_def	TYPE_T;
-flex_def	UNION_T;
-flex_def	UNKNOWN;
-flex_def	VOLATILE_T;
-flex_def	WHILE_T;
+enum{
+	ADDRESS_OR_BITWISE_AND_T	=	0x400,
+	ARITHMETIC_T				=	0x401,
+	AUTO_T						=	0x402,
+	BITWISE_INVERSE_T			=	0x403,
+	BITWISE_LEFT_T				=	0x404,
+	BITWISE_OR_T				=	0x405,
+	BITWISE_RIGHT_T				=	0x406,
+	BITWISE_XOR_T				=	0x407,
+	BREAK_T						=	0x408,
+	CASE_T						=	0x409,
+	CHAR_T						=	0x410,
+	CLOSE_BRACKET_T				=	0x411,
+	CLOSE_CURLY_BRACKET_T		=	0x412,
+	CLOSE_SQUARE_BRACKET_T		=	0x413,
+	COLON_T						=	0x414,
+	COMMA_T						=	0x415,
+	CONDITIONAL_OPERATOR		=	0x416,
+	CONST_T						=	0x417,
+	CONTINUE_T					=	0x418,
+	DECREMENT_T					=	0x419,
+	DEFAULT_T					=	0x420,
+	DO_T						=	0x421,
+	ELSE_T						=	0x422,
+	ENUM_T						=	0x423,
+	EOS_T						=	0x424,
+	EXTERN_T					=	0x425,
+	FLOAT_T						=	0x426,
+	FOR_T						=	0x427,
+	FULL_STOP_T					=	0x428,
+	GOTO_T						=	0x429,
+	GREATER_THAN_EQUALS_T		=	0x430,
+	GREATER_THAN_T				=	0x431,
+	IF_T						=	0x432,
+	INCREMENT_T					=	0x434,
+	INT_T						=	0x435,
+	INVERSE_T					=	0x436,
+	LESS_THAN_EQUALS_T			=	0x437,
+	LESS_THAN_T					=	0x438,
+	LOGICAL_AND_T				=	0x439,
+	LOGICAL_EQUALS_T			=	0x440,
+	LOGICAL_OR_T				=	0x441,
+	MULT_OR_POINTER_T			=	0x442,
+	NAME_T						=	0x443,
+	NOT_EQUALS_T				=	0x444,
+	NOT_T						=	0x445,
+	OPEN_BRACKET_T				=	0x446,
+	OPEN_CURLY_BRACKET_T		=	0x447,
+	OPEN_SQUARE_BRACKET_T		=	0x448,
+	POINTER_MEMBER_T			=	0x449,
+	REGISTER_T					=	0x450,
+	RETURN_T					=	0x451,
+	SIZEOF_T					=	0x452,
+	STATIC_T					=	0x453,
+	STRING_T					=	0x454,
+	STRUCT_T					=	0x455,
+	SWITCH_T					=	0x456,
+	TYPEDEF_T					=	0x457,
+	TYPE_LENGTH_T				=	0x458,
+	TYPE_PROMOTION_T			=	0x459,
+	TYPE_SIGNED_T				=	0x460,
+	TYPE_T						=	0x461,
+	UNION_T						=	0x462,
+	UNKNOWN						=	0x800,
+	VOLATILE_T					=	0x463,
+	WHILE_T						=	0x464,
+} flex_type;
 	
 #endif
