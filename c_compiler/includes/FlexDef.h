@@ -73,17 +73,31 @@ enum  flex_type{
 };
 
 
-template <typename> T
+class tokn_t
+{
+public:
+	virtual std::string toString(){
+		return Data;
+	}
+
+	virtual void setData(std::string input){
+		Data = input;
+	}
+private:
+	std::string Data; 
+};
+
 struct flex_def{
 public:
 	flex_def(flex_type name, const char* Data_in, int linenum, int columnnum)
 	:name(name), linenum(linenum),columnnum(columnnum){
-		Data = Data_in;
+		Data.setData(Data_in);
 	}
 
 	flex_type	name;
-	T	Data;
+	tokn_t	Data;
 	int linenum;
 	int columnnum;
+};
 	
 #endif

@@ -1,0 +1,16 @@
+
+
+typedef ::= 'TYPEDEF_T' type 'ID_T' 'SEMI_COLON_T'  => Add function to add value into map
+qual_type ::= 9qualifier basic_type) | (basic_type qualifier)
+basic_type ::= 	=> defined as list of items stored as keys in type map
+qual_pointer ::= 'MULT_OR_POINTER_T' qualifier
+pointer ::= qual_pointer | 'MULT_OR_POINTER_T'
+
+qualifier ::= basic_qual | (basic_qual basic_qual)
+basic_qual ::= 'CONST_T' | 'VOLATILE_T'
+
+storage ::= 'EXTERN_T' | 'AUTO_T' | 'STATIC_T' | 'REGISTER_T'
+
+variable_def ::= storage? type 'ID_T'
+
+type ::= (qual_type | basic_type) pointer*
