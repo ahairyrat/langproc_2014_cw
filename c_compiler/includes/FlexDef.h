@@ -1,6 +1,6 @@
 
-#ifndef	_structS_H
-#define	_structS_H
+#ifndef	_FLEXDEF_H
+#define	_FLEXDEF_H
 
 enum  flex_type{
 	ADDRESS_OR_BITWISE_AND_T	=	0x400,
@@ -72,14 +72,18 @@ enum  flex_type{
 	WHILE_T						=	0x464,
 };
 
-struct flex_def{
-	flex_type	name;
-	std::string		Data;
 
-	flex_def(flex_type name, const char* Data_in)
-	:name(name){
+template <typename> T
+struct flex_def{
+public:
+	flex_def(flex_type name, const char* Data_in, int linenum, int columnnum)
+	:name(name), linenum(linenum),columnnum(columnnum){
 		Data = Data_in;
 	}
-};
+
+	flex_type	name;
+	T	Data;
+	int linenum;
+	int columnnum;
 	
 #endif
