@@ -3,9 +3,9 @@
 #define	_FLEXDEF_H
 
 enum  flex_type{
-	ADDRESS_OR_BITWISE_AND_T	=	0x400,
+	ADDRESS_OR_BITWISE_AND_T		=	0x400,
 	ARITHMETIC_T				=	0x401,
-	AUTO_T						=	0x402,
+	AUTO_T					=	0x402,
 	BITWISE_INVERSE_T			=	0x403,
 	BITWISE_LEFT_T				=	0x404,
 	BITWISE_OR_T				=	0x405,
@@ -19,7 +19,6 @@ enum  flex_type{
 	CLOSE_SQUARE_BRACKET_T		=	0x413,
 	COLON_T						=	0x414,
 	COMMA_T						=	0x415,
-	CONDITIONAL_OPERATOR		=	0x416,
 	CONST_T						=	0x417,
 	CONTINUE_T					=	0x418,
 	DECREMENT_T					=	0x419,
