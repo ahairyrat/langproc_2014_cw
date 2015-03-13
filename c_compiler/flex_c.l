@@ -126,7 +126,7 @@ NUMBER_ID						0[a-zA-Z]
 {SEMI_COLON}							return EOS_T;columnnum++;
 {SIZEOF}							return SIZEOF_T;columnnum++;
 {STATIC}							return STATIC_T;columnnum++;
-{STRING_LITERAL}|{CHAR_LITERAL}					return STRING_T;columnnum++;
+{STRING_LITERAL}						return STRING_T;columnnum++;
 {STRUCT}							return STRUCT_T;columnnum++;
 {SWITCH}							return SWITCH_T;columnnum++;
 {TILDE}								return BITWISE_INVERSE_T;columnnum++;
