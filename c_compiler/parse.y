@@ -1,181 +1,175 @@
 
-%header{
-	#include <iostream>
-	#include <fstream>
-	#include <cstdlib>
-	using namespace std;
-%}
-
-%{
-	#include <FlexLexer.h>
-%}
-
-%name C_Parser
-%define MEMBERS           	\
-    virtual ~C_Parser()   {} 	\
-    private:                   	\
-       yyFlexLexer lexer;
-%define LEX_BODY {return lexer.yylex();}
-%define ERROR_BODY {cerr << "error encountered at line: "<<lexer.lineno()<<" last word parsed:"<<lexer.YYText()<<"\n";}
-
-%union{
-  	char* str;
-	int   intval;
+%code requires{
+	extern int yylex();
 }
 
+%{
+	#include "CParser.hpp"
+	#include <iostream>
+	using namespace std;
+
+	int yyerror():
+%}
+
+%union{
+	char* str;
+}
 
 %token<str> ADDRESS_OR_BITWISE_AND_T ARITHMETIC_T AUTO_T BITWISE_INVERSE_T BITWISE_LEFT_T BITWISE_OR_T BITWISE_RIGHT_T BITWISE_XOR_T BREAK_T CASE_T CHAR_T CLOSE_BRACKET_T CLOSE_CURLY_BRACKET_T CLOSE_SQUARE_BRACKET_T COLON_T COMMA_T CONST_T CONTINUE_T DECREMENT_T DEFAULT_T DO_T ELLIPSES_T ELSE_T ENUM_T EQUALS_T EOS_T EXTERN_T FLOAT_T FOR_T FULL_STOP_T GOTO_T GREATER_THAN_EQUALS_T GREATER_THAN_T ID_T IF_T INCREMENT_T INT_T INVERSE_T LESS_THAN_EQUALS_T LESS_THAN_T LOGICAL_AND_T LOGICAL_EQUALS_T LOGICAL_OR_T MULT_OR_POINTER_T NOT_EQUALS_T NOT_T OPEN_BRACKET_T OPEN_CURLY_BRACKET_T OPEN_SQUARE_BRACKET_T POINTER_MEMBER_T REGISTER_T RETURN_T SIZEOF_T STATIC_T STRING_T STRUCT_T SWITCH_T TYPEDEF_T TYPE_LENGTH_T TYPE_PROMOTION_T TYPE_SIGNED_T TYPE_T UNION_T UNKNOWN VOLATILE_T WHILE_T CONDITIONAL_OPERATOR_T
-			
+
+%type<str> variable_dec_single typedef basic_type qual_pointer pointer pointer_list qualifier storage variable_dec id_list type non_pointer_type non_pointer_basic_type id address_id address address_list length signed struct_use struct_def struct union_def union union_use enum enum_def enum_use modifier modifier_list modified_struct number parameter_list modified_enum unknown modified_union variable_dec_stype function_def
+
+
 %start	test
 
 %%
 
 typedef		:
-		TYPEDEF_T variable_dec_single EOS_T			{cout << "Found " << $1 << " " << $2 <<" " << $3 << endl;
+		TYPEDEF_T variable_dec_single EOS_T		{$$ = $2; cout << "Found typedef " << $$ << endl;
 										/*Add code for adding to list of types*/}
 		;
 
 basic_type 	:							//int, char, void etc.
-		TYPE_T							{}
+		TYPE_T						{$$; cout << "Found type " << $$ << endl;}
 		;
 
 qual_pointer 	:						//The qualifier for a pointer comes after the respective pointer
-		MULT_OR_POINTER_T qualifier_list		{}
+		MULT_OR_POINTER_T qualifier_list		{cout << "Found ID " << $$ << endl;}
 		;
 
 pointer 	:					
-		qual_pointer					{}//*const
-		| MULT_OR_POINTER_T				{}//*
+		qual_pointer					{cout << "Found ID " << $$ << endl;}//*const
+		| MULT_OR_POINTER_T				{cout << "Found ID " << $$ << endl;}//*
 		;
 
 pointer_list 	:						//Unbounded list of pointers
- 		pointer_list pointer 				{}
-		| pointer					{}
+ 		pointer_list pointer 				{cout << "Found ID " << $$ << endl;}
+		| pointer					{cout << "Found ID " << $$ << endl;}
 		;
 
 qualifier 	:
-		CONST_T						{}//const
-		| VOLATILE_T					{}//volatile
+		CONST_T						{cout << "Found ID " << $$ << endl;}//const
+		| VOLATILE_T					{cout << "Found ID " << $$ << endl;}//volatile
 		;
 
 storage 	:		
-		EXTERN_T					{}//extern
-		| AUTO_T					{}//auto
-		| STATIC_T					{}//static
-		| REGISTER_T					{}//register
+		EXTERN_T					{cout << "Found ID " << $$ << endl;}//extern
+		| AUTO_T					{cout << "Found ID " << $$ << endl;}//auto
+		| STATIC_T					{cout << "Found ID " << $$ << endl;}//static
+		| REGISTER_T					{cout << "Found ID " << $$ << endl;}//register
 		;
 
 variable_dec_single:
-		 type ID_T					{}//int x, int***const* x
+		 type ID_T					{cout << "Found ID " << $$ << endl;}//int x, int***const* x
 		;
 
 variable_dec_stype:
-		type id_list					{}//int x, y, z
+		type id_list					{cout << "Found ID " << $$ << endl;}//int x, y, z
 		;
 
 variable_dec	:
-		variable_dec_single				{}//int x
-		| variable_dec_stype				{}//int x, y, z
+		variable_dec_single				{cout << "Found ID " << $$ << endl;}//int x
+		| variable_dec_stype				{cout << "Found ID " << $$ << endl;}//int x, y, z
 		;
 
 id_list		:							//unbounded list of comma seperate identifiers
-		id_list COMMA_T id				{}
-		| id						{}
+		id_list COMMA_T id				{cout << "Found ID " << $$ << endl;}
+		| id						{cout << "Found ID " << $$ << endl;}
 		;
 
 type 		:
-		 non_pointer_type pointer_list 			{}	//int x***
-		| non_pointer_type				{}	//int x
+		 non_pointer_type pointer_list 			{cout << "Found ID " << $$ << endl;}	//int x***
+		| non_pointer_type				{cout << "Found ID " << $$ << endl;}	//int x
 		;
 
 non_pointer_type :							//all of the following can be used as a type or the basis for a pointer
-		non_pointer_basic_type				{}
-		| modified_struct				{}
-		| modified_enum					{}
-		| modified_union				{}
+		non_pointer_basic_type				{cout << "Found ID " << $$ << endl;}
+		| modified_struct				{cout << "Found ID " << $$ << endl;}
+		| modified_enum					{cout << "Found ID " << $$ << endl;}
+		| modified_union				{cout << "Found ID " << $$ << endl;}
 		;
 
 non_pointer_basic_type :
-		 modifier_list basic_type modifier_list 	{}	//const unsigned int volatile etc.
-		| basic_type modifier_list 			{}	//int unsigned
-		| modifier_list basic_type 			{}	//unsigned int
-		| modifier_list					{}	//unsigned
+		 modifier_list basic_type modifier_list 	{cout << "Found ID " << $$ << endl;}	//const unsigned int volatile etc.
+		| basic_type modifier_list 			{cout << "Found ID " << $$ << endl;}	//int unsigned
+		| modifier_list basic_type 			{cout << "Found ID " << $$ << endl;}	//unsigned int
+		| modifier_list					{cout << "Found ID " << $$ << endl;}	//unsigned
 		;
 
 id		:
-		ID_T						{cout << "Found ID " << $1. << endl;
+		ID_T						{cout << "Found ID " << $$ << endl;
 								/*Add code to change to TYPE_T if i map of types*/}
 		;
 
 address_id	:
-		address_list id					{}
+		address_list id					{cout << "Found ID " << $$ << endl;}
 		;
 
 address		:
-		MULT_OR_POINTER_T				{}
-		| ADDRESS_OR_BITWISE_AND_T			{}
+		MULT_OR_POINTER_T				{cout << "Found ID " << $$ << endl;}
+		| ADDRESS_OR_BITWISE_AND_T			{cout << "Found ID " << $$ << endl;}
 		;
 
 address_list	:
-		address_list address				{}
-		| address					{}
+		address_list address				{cout << "Found ID " << $$ << endl;}
+		| address					{cout << "Found ID " << $$ << endl;}
 		;
 
 length 		:							//long, short
-		TYPE_LENGTH_T					{}
+		TYPE_LENGTH_T					{cout << "Found ID " << $$ << endl;}
 		;
 
 signed 		:							//signed, unsigned
-		TYPE_SIGNED_T					{}
+		TYPE_SIGNED_T					{cout << "Found ID " << $$ << endl;}
 		;
 
 struct_def 	:					//struct s{...}
 		STRUCT_T id OPEN_CURLY_BRACKET_T struct_def_param_list CLOSE_CURLY_BRACKET_T	
-								{}
+								{cout << "Found ID " << $$ << endl;}
 		| STRUCT_T OPEN_CURLY_BRACKET_T struct_def_param_list CLOSE_CURLY_BRACKET_T
-								{}
+								{cout << "Found ID " << $$ << endl;}
 		;
 
 struct_use 	:							//struct s
-		STRUCT_T id					{}
+		STRUCT_T id					{cout << "Found ID " << $$ << endl;}
 		;
 
 struct 		:
-		struct_def					{}	//struct s{...}
-		| struct_use					{}	//struct s
+		struct_def					{cout << "Found ID " << $$ << endl;}	//struct s{...}
+		| struct_use					{cout << "Found ID " << $$ << endl;}	//struct s
 		;
 
 function_def 	:
 		variable_dec_single OPEN_BRACKET_T parameter_list CLOSE_BRACKET_T OPEN_CURLY_BRACKET_T parameter_list CLOSE_CURLY_BRACKET_T
-								{}
+								{cout << "Found ID " << $$ << endl;}
 		;
 
 modifier 	:
-		length						{}	//short, long
-		| storage					{}	//extern, static, auto, register
-		| qualifier					{}	//const, volatile
-		| signed					{}	//signed, unsigned
+		length						{cout << "Found ID " << $$ << endl;}	//short, long
+		| storage					{cout << "Found ID " << $$ << endl;}	//extern, static, auto, register
+		| qualifier					{cout << "Found ID " << $$ << endl;}	//const, volatile
+		| signed					{cout << "Found ID " << $$ << endl;}	//signed, unsigned
 		;
 
 modifier_list 	:				//unbounded list of length, storage, quaifier and signed modifiers. 
 						//Exact order does not matter. Validity must be checked later
-		 modifier_list modifier				{}
-		| modifier					{}
+		 modifier_list modifier				{cout << "Found ID " << $$ << endl;}
+		| modifier					{cout << "Found ID " << $$ << endl;}
 		;
 
 modified_struct :
-		 qualifier_list struct 				{}	//const struct ...
-		| struct					{}	//struct ...
+		 qualifier_list struct 				{cout << "Found ID " << $$ << endl;}	//const struct ...
+		| struct					{cout << "Found ID " << $$ << endl;}	//struct ...
 		;
 
 number 		:
-		INT_T						{}	//01234, 0x134, 0b1111
-		| FLOAT_T					{}	//0213.21414
+		INT_T						{cout << "Found ID " << $$ << endl;}	//01234, 0x134, 0b1111
+		| FLOAT_T					{cout << "Found ID " << $$ << endl;}	//0213.21414
 		;
 
 parameter_list 	:				//unbounded list of variable declerations
-		 parameter_list COMMA_T variable_dec_single 	{}
-		| variable_dec_single				{}
+		 parameter_list COMMA_T variable_dec_single 	{cout << "Found ID " << $$ << endl;}
+		| variable_dec_single				{cout << "Found ID " << $$ << endl;}
 		;
 
 program		:
@@ -184,23 +178,23 @@ program		:
 
 enum_def	:
 		ENUM_T id OPEN_CURLY_BRACKET_T /*....................................*/ CLOSE_CURLY_BRACKET_T	
-								{}	//enum x{...}	-normal
+								{cout << "Found ID " << $$ << endl;}	//enum x{...}	-normal
 		| ENUM_T OPEN_CURLY_BRACKET_T /*....................................*/ CLOSE_CURLY_BRACKET_T
-								{}	//enum {...}	-anonymous
+								{cout << "Found ID " << $$ << endl;}	//enum {...}	-anonymous
 		;
 
 enum_use	:
-		ENUM_T id					{}
+		ENUM_T id					{cout << "Found ID " << $$ << endl;}
 		;
 
 enum		:
-		enum_def					{}
-		| enum_use					{}
+		enum_def					{cout << "Found ID " << $$ << endl;}
+		| enum_use					{cout << "Found ID " << $$ << endl;}
 		;
 
 modified_enum	:
-		qualifier_list enum				{}	//const enum ...
-		| enum						{}	//enum ...
+		qualifier_list enum				{cout << "Found ID " << $$ << endl;}	//const enum ...
+		| enum						{cout << "Found ID " << $$ << endl;}	//enum ...
 		;
 
 union_def	:
@@ -260,7 +254,7 @@ type_cast	:					//(const unsigned int**const*)
 		;
 
 unknown		:
-		UNKNOWN					{std::cout << "Unknown value found " << $1 << std::endl;}
+		UNKNOWN					{std::cout << "Unknown value found " << $$ << std::endl;}
 		;
 
 arithmetic_op	:
@@ -358,16 +352,18 @@ struct_def_param_list:
 		;
 
 test		:								//For debugging purposes
-		id						{}
+		type						{}
 		;
 
 %%
 
 int main()
 {
-	C_Parser parser;
-	parser.yyparse();
+	yyparse();
 	return 0;
 }
 
+int yyerror()
+{
+}
 
