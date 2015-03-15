@@ -1,247 +1,303 @@
 
 %code requires{
 	extern int yylex();
+	extern int linenum, columnnum;
+	#include "includes/FlexDef.h"
 }
 
 %{
 	#include "CParser.hpp"
 	#include <iostream>
-	using namespace std;
+	#include <string>
+	#include <cstring>
+	#include <vector>
 
-	int yyerror():
+	void yyerror (char const *s);
+
+	int linenum = 1;
+	int columnnum = 1;
+
+	int anonymousnum = 0;
+
 %}
 
 %union{
 	char* str;
+	type_t list;
+	abstractNode* node;
+	type_t type;
 }
 
-%token<str> ADDRESS_OR_BITWISE_AND_T ARITHMETIC_T AUTO_T BITWISE_INVERSE_T BITWISE_LEFT_T BITWISE_OR_T BITWISE_RIGHT_T BITWISE_XOR_T BREAK_T CASE_T CHAR_T CLOSE_BRACKET_T CLOSE_CURLY_BRACKET_T CLOSE_SQUARE_BRACKET_T COLON_T COMMA_T CONST_T CONTINUE_T DECREMENT_T DEFAULT_T DO_T ELLIPSES_T ELSE_T ENUM_T EQUALS_T EOS_T EXTERN_T FLOAT_T FOR_T FULL_STOP_T GOTO_T GREATER_THAN_EQUALS_T GREATER_THAN_T ID_T IF_T INCREMENT_T INT_T INVERSE_T LESS_THAN_EQUALS_T LESS_THAN_T LOGICAL_AND_T LOGICAL_EQUALS_T LOGICAL_OR_T MULT_OR_POINTER_T NOT_EQUALS_T NOT_T OPEN_BRACKET_T OPEN_CURLY_BRACKET_T OPEN_SQUARE_BRACKET_T POINTER_MEMBER_T REGISTER_T RETURN_T SIZEOF_T STATIC_T STRING_T STRUCT_T SWITCH_T TYPEDEF_T TYPE_LENGTH_T TYPE_PROMOTION_T TYPE_SIGNED_T TYPE_T UNION_T UNKNOWN VOLATILE_T WHILE_T CONDITIONAL_OPERATOR_T
+%token<str> ADDRESS_OR_BITWISE_AND ARITHMETIC AUTO BITWISE_INVERSE BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR BREAK CASE CHAR CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET COLON COMMA CONST CONTINUE DECREMENT DEFAULT DO ELLIPSES ELSE ENUM EQUALS EOS EXTERN FLOAT FOR FULL_STOP GOTO GREATER_THAN_EQUALS GREATER_THAN ID IF INCREMENT INT INVERSE LESS_THAN_EQUALS LESS_THAN LOGICAL_AND LOGICAL_EQUALS LOGICAL_OR MULT_OR_POINTER NOT_EQUALS NOT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET POINTER_MEMBER REGISTER RETURN SIZEOF STATIC STRING STRUCT SWITCH TYPEDEF TYPE_SIGNED TYPE_UNSIGNED TYPE_PROMOTION TYPE_LONG TYPE_SHORT TYPE UNION UNKNOWN VOLATILE WHILE CONDITIONAL_OPERATOR
 
-%type<str> variable_dec_single typedef basic_type qual_pointer pointer pointer_list qualifier storage variable_dec id_list type non_pointer_type non_pointer_basic_type id address_id address address_list length signed struct_use struct_def struct union_def union union_use enum enum_def enum_use modifier modifier_list modified_struct number parameter_list modified_enum unknown modified_union variable_dec_stype function_def
+%type<node> variable_dec_single typedef  pointer_list variable_dec address_id number parameter_list  unknown  variable_dec_stype function_def struct_def_param_list qualifier_list assign_expr expr unary_expr binary_expr switch_expr while_expr if_expr for_expr compound_assign logic_op arithmetic_op bitwise_op
+
+%type<str> qualifier storage length signed modifier address id
+
+%type<list> address_list id_list modifier_list
+
+%type<type> basic_type pointer type non_pointer_type non_pointer_basic_type enum struct_use struct_def struct union union_use  enum_def enum_use union_def modified_struct modified_union modified_enum
 
 
 %start	test
 
 %%
 
+test		:						//For debugging purposes
+		variable_dec_single				{std::cout << "Test successful" << std::endl;
+									root = $1;}
+		;
+
+
+
 typedef		:
-		TYPEDEF_T variable_dec_single EOS_T		{$$ = $2; cout << "Found typedef " << $$ << endl;
-										/*Add code for adding to list of types*/}
+		TYPEDEF variable_dec_single EOS			{$$ = new parserNode(TYPEDEF_T, NULL_S, $2,NULL,$3);
+										//Add code to insert tpe into map/vector
+								}
 		;
 
-basic_type 	:							//int, char, void etc.
-		TYPE_T						{$$; cout << "Found type " << $$ << endl;}
-		;
-
-qual_pointer 	:						//The qualifier for a pointer comes after the respective pointer
-		MULT_OR_POINTER_T qualifier_list		{cout << "Found ID " << $$ << endl;}
+basic_type 	:						//int, char, void etc.
+		TYPE						{$$ = getType($1);}
 		;
 
 pointer 	:					
-		qual_pointer					{cout << "Found ID " << $$ << endl;}//*const
-		| MULT_OR_POINTER_T				{cout << "Found ID " << $$ << endl;}//*
+		MULT_OR_POINTER qualifier_list			{/*Link through qualified pointer*/}//*const
+		| MULT_OR_POINTER				{/*Link through pointer*/}//*
 		;
 
 pointer_list 	:						//Unbounded list of pointers
- 		pointer_list pointer 				{cout << "Found ID " << $$ << endl;}
-		| pointer					{cout << "Found ID " << $$ << endl;}
+ 		pointer_list pointer 				{}
+		| pointer					{}
 		;
 
 qualifier 	:
-		CONST_T						{cout << "Found ID " << $$ << endl;}//const
-		| VOLATILE_T					{cout << "Found ID " << $$ << endl;}//volatile
+		CONST						{$$ = $1}//const
+		| VOLATILE					{$$ = $1}//volatile
 		;
 
 storage 	:		
-		EXTERN_T					{cout << "Found ID " << $$ << endl;}//extern
-		| AUTO_T					{cout << "Found ID " << $$ << endl;}//auto
-		| STATIC_T					{cout << "Found ID " << $$ << endl;}//static
-		| REGISTER_T					{cout << "Found ID " << $$ << endl;}//register
+		EXTERN						{$$ = $1}//extern
+		| AUTO						{$$ = $1}//auto
+		| STATIC					{$$ = $1}//static
+		| REGISTER					{$$ = $1}//register
 		;
 
 variable_dec_single:
-		 type ID_T					{cout << "Found ID " << $$ << endl;}//int x, int***const* x
+		type id						{ $$ = new variableNode(VAR_T, $2, $1);}//int x
+		| type assign_expr				{/* link id to type */
+									}//int x = 1
 		;
 
 variable_dec_stype:
-		type id_list					{cout << "Found ID " << $$ << endl;}//int x, y, z
+		type id_list					{/* link ids to type */
+									}//int x, y, z
 		;
 
 variable_dec	:
-		variable_dec_single				{cout << "Found ID " << $$ << endl;}//int x
-		| variable_dec_stype				{cout << "Found ID " << $$ << endl;}//int x, y, z
+		variable_dec_single				{$$ = $1}//int x
+		| variable_dec_stype				{$$ = $1}//int x, y, z
 		;
 
-id_list		:							//unbounded list of comma seperate identifiers
-		id_list COMMA_T id				{cout << "Found ID " << $$ << endl;}
-		| id						{cout << "Found ID " << $$ << endl;}
+id_list		:						 //unbounded list of comma seperate identifiers
+		id_list COMMA id				{}
+		| id						{}
+		| id_list COMMA assign_expr			{}
+		| assign_expr					{}
 		;
 
 type 		:
-		 non_pointer_type pointer_list 			{cout << "Found ID " << $$ << endl;}	//int x***
-		| non_pointer_type				{cout << "Found ID " << $$ << endl;}	//int x
+		 non_pointer_type pointer_list 			{}	//int x***
+		| non_pointer_type				{$$ = $1;}	//int x
 		;
 
 non_pointer_type :							//all of the following can be used as a type or the basis for a pointer
-		non_pointer_basic_type				{cout << "Found ID " << $$ << endl;}
-		| modified_struct				{cout << "Found ID " << $$ << endl;}
-		| modified_enum					{cout << "Found ID " << $$ << endl;}
-		| modified_union				{cout << "Found ID " << $$ << endl;}
+		non_pointer_basic_type				{$$ = $1;}
+		| modified_struct				{$$ = $1;}
+		| modified_enum					{$$ = $1;}
+		| modified_union				{$$ = $1;}
 		;
 
 non_pointer_basic_type :
-		 modifier_list basic_type modifier_list 	{cout << "Found ID " << $$ << endl;}	//const unsigned int volatile etc.
-		| basic_type modifier_list 			{cout << "Found ID " << $$ << endl;}	//int unsigned
-		| modifier_list basic_type 			{cout << "Found ID " << $$ << endl;}	//unsigned int
-		| modifier_list					{cout << "Found ID " << $$ << endl;}	//unsigned
+		basic_type					{$$ = $1}	//int
+
+		| modifier_list basic_type modifier_list 	{$$ = $2;}	//const unsigned int volatile etc.
+
+		| basic_type modifier_list 			{$$ = $2;
+									
+								}	//int unsigned
+
+		| modifier_list basic_type 			{$$ = $2;
+									
+								}	//unsigned int
+
+		| modifier_list					{$$ = getType("int");
+									//Evaluate modifiers
+								}	//unsigned
 		;
 
 id		:
-		ID_T						{cout << "Found ID " << $$ << endl;
-								/*Add code to change to TYPE_T if i map of types*/}
+		ID						{$$ = $1;}
 		;
 
 address_id	:
-		address_list id					{cout << "Found ID " << $$ << endl;}
+		address_list id					{/*Pop back and add for every address item*/
+
+								}
 		;
 
 address		:
-		MULT_OR_POINTER_T				{cout << "Found ID " << $$ << endl;}
-		| ADDRESS_OR_BITWISE_AND_T			{cout << "Found ID " << $$ << endl;}
+		MULT_OR_POINTER					{$$ = $1}
+		| ADDRESS_OR_BITWISE_AND			{$$ = $1}
 		;
 
 address_list	:
-		address_list address				{cout << "Found ID " << $$ << endl;}
-		| address					{cout << "Found ID " << $$ << endl;}
+		address_list address				{/* Add code to build list of $1 and add $2*/}
+		| address					{/* Add code to build list of $1*/}
 		;
 
-length 		:							//long, short
-		TYPE_LENGTH_T					{cout << "Found ID " << $$ << endl;}
+length 		:						//long, short
+		TYPE_LONG					{$$ = $1}
+		| TYPE_SHORT					{$$ = $1}
 		;
 
-signed 		:							//signed, unsigned
-		TYPE_SIGNED_T					{cout << "Found ID " << $$ << endl;}
+signed 		:						//signed, unsigned
+		TYPE_SIGNED					{$$ = $1}
+		| TYPE_UNSIGNED					{$$ = $1}
 		;
 
 struct_def 	:					//struct s{...}
-		STRUCT_T id OPEN_CURLY_BRACKET_T struct_def_param_list CLOSE_CURLY_BRACKET_T	
-								{cout << "Found ID " << $$ << endl;}
-		| STRUCT_T OPEN_CURLY_BRACKET_T struct_def_param_list CLOSE_CURLY_BRACKET_T
-								{cout << "Found ID " << $$ << endl;}
+		STRUCT id OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET	
+								{
+									/* add struct definition into storage*/}
+		| STRUCT OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET
+								{
+									/*add struct definition into storage*/
+									anonymousnum++;
+									}
 		;
 
 struct_use 	:							//struct s
-		STRUCT_T id					{cout << "Found ID " << $$ << endl;}
+		STRUCT id					{}
 		;
 
 struct 		:
-		struct_def					{cout << "Found ID " << $$ << endl;}	//struct s{...}
-		| struct_use					{cout << "Found ID " << $$ << endl;}	//struct s
+		struct_def					{}	//struct s{...}
+		| struct_use					{}	//struct s
 		;
 
 function_def 	:
-		variable_dec_single OPEN_BRACKET_T parameter_list CLOSE_BRACKET_T OPEN_CURLY_BRACKET_T parameter_list CLOSE_CURLY_BRACKET_T
-								{cout << "Found ID " << $$ << endl;}
+		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET OPEN_CURLY_BRACKET parameter_list CLOSE_CURLY_BRACKET
+								{}
 		;
 
 modifier 	:
-		length						{cout << "Found ID " << $$ << endl;}	//short, long
-		| storage					{cout << "Found ID " << $$ << endl;}	//extern, static, auto, register
-		| qualifier					{cout << "Found ID " << $$ << endl;}	//const, volatile
-		| signed					{cout << "Found ID " << $$ << endl;}	//signed, unsigned
+		length						{$$ = $1}	//short, long
+		| storage					{$$ = $1}	//extern, static, auto, register
+		| qualifier					{$$ = $1}	//const, volatile
+		| signed					{$$ = $1}	//signed, unsigned
 		;
 
-modifier_list 	:				//unbounded list of length, storage, quaifier and signed modifiers. 
-						//Exact order does not matter. Validity must be checked later
-		 modifier_list modifier				{cout << "Found ID " << $$ << endl;}
-		| modifier					{cout << "Found ID " << $$ << endl;}
+modifier_list 	:							//unbounded list of length, storage, quaifier and signed modifiers. 
+									//Exact order does not matter. Validity must be checked later
+		 modifier_list modifier				{}
+		| modifier					{}
 		;
 
 modified_struct :
-		 qualifier_list struct 				{cout << "Found ID " << $$ << endl;}	//const struct ...
-		| struct					{cout << "Found ID " << $$ << endl;}	//struct ...
+		 qualifier_list struct 				{$$ = $2; /* evaluate modifiers */}	//const struct ...
+		| struct					{$$ = $1;}	//struct ...
 		;
 
 number 		:
-		INT_T						{cout << "Found ID " << $$ << endl;}	//01234, 0x134, 0b1111
-		| FLOAT_T					{cout << "Found ID " << $$ << endl;}	//0213.21414
+		INT						{$$ = new Node(CONST_VAL_T, $1);}	//01234, 0x134, 0b1111
+		| FLOAT						{$$ = new Node(CONST_VAL_T, $1);}	//0213.21414
 		;
 
 parameter_list 	:				//unbounded list of variable declerations
-		 parameter_list COMMA_T variable_dec_single 	{cout << "Found ID " << $$ << endl;}
-		| variable_dec_single				{cout << "Found ID " << $$ << endl;}
+		 parameter_list COMMA variable_dec_single 	{}
+		| variable_dec_single				{}
 		;
 
 program		:
-		/*..............................................................*/
+		/*................................................			{root = new ..............*/
 		;
 
 enum_def	:
-		ENUM_T id OPEN_CURLY_BRACKET_T /*....................................*/ CLOSE_CURLY_BRACKET_T	
-								{cout << "Found ID " << $$ << endl;}	//enum x{...}	-normal
-		| ENUM_T OPEN_CURLY_BRACKET_T /*....................................*/ CLOSE_CURLY_BRACKET_T
-								{cout << "Found ID " << $$ << endl;}	//enum {...}	-anonymous
+		ENUM id OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET	
+								{
+									/* add enum definition into storage*/}
+		| ENUM OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET
+								{
+									/*add enum definition into storage*/
+									anonymousnum++;
+									}
 		;
 
 enum_use	:
-		ENUM_T id					{cout << "Found ID " << $$ << endl;}
+		ENUM id						{/*Add code to check if enum exists*/
+									}
 		;
 
 enum		:
-		enum_def					{cout << "Found ID " << $$ << endl;}
-		| enum_use					{cout << "Found ID " << $$ << endl;}
+		enum_def					{$$ = $1}
+		| enum_use					{$$ = $1}
 		;
 
 modified_enum	:
-		qualifier_list enum				{cout << "Found ID " << $$ << endl;}	//const enum ...
-		| enum						{cout << "Found ID " << $$ << endl;}	//enum ...
+		qualifier_list enum				{$$ = $2; /*evaluate modifiers */}	//const enum ...
+		| enum						{$$ = $1}	//enum ...
 		;
 
 union_def	:
-		UNION_T id OPEN_CURLY_BRACKET_T struct_def_param_list CLOSE_CURLY_BRACKET_T
-								{}	//union x{...}	-normal
-		| UNION_T OPEN_CURLY_BRACKET_T struct_def_param_list CLOSE_CURLY_BRACKET_T
-								{}	//union {...}	-anonymous
+		UNION id OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET	
+								{
+									/* add union definition into storage*/}
+		| UNION OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET
+								{
+									/*add union definition into storage*/
+									anonymousnum++;
+									}
 		;
 
 union_use	:
-		UNION_T id					{}
+		UNION id					{/* Add code to check if union has been defined*/
+									}
 		;
 
 union		:
-		union_def					{}
-		| union_use					{}
+		union_def					{$$ = $1}
+		| union_use					{$$ = $1}
 		;
 
 modified_union	:
-		qualifier_list union				{}	//const union ...
-		| union						{}	//union ...
+		qualifier_list union				{$$ = $2; /*evaluate modifiers */}	//const union ...
+		| union						{$$ = $1;}	//union ...
 		;
 
 compound_assign	:
-		NOT_T EQUALS_T					{}	//!=		
-		| arithmetic_op EQUALS_T			{}	//+= -= *= /=
-		| bitwise_op EQUALS_T				{}	//^= <<= >>= etc.
+		NOT EQUALS					{}	//!=		
+		| arithmetic_op EQUALS				{$$ = $1}	//+= -= *= /=
+		| bitwise_op EQUALS				{$$ = $1}	//^= <<= >>= etc.
 		;
 
 logic_op	:
-		NOT_T						{}	//!
-		| GREATER_THAN_T				{}	//>
-		| GREATER_THAN_EQUALS_T				{}	//>=
-		| LESS_THAN_EQUALS_T				{}	//<=
-		| LESS_THAN_T					{}	//<
-		| LOGICAL_AND_T					{}	//&&
-		| LOGICAL_EQUALS_T				{}	//==
-		| LOGICAL_OR_T					{}	//||
+		NOT						{$$ = new Node(LOGICOP_T, $1)}	//!
+		| GREATER_THAN					{$$ = new Node(LOGICOP_T, $1)}	//>
+		| GREATER_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1)}	//>=
+		| LESS_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1)}	//<=
+		| LESS_THAN					{$$ = new Node(LOGICOP_T, $1)}	//<
+		| LOGICAL_AND					{$$ = new Node(LOGICOP_T, $1)}	//&&
+		| LOGICAL_EQUALS				{$$ = new Node(LOGICOP_T, $1)}	//==
+		| LOGICAL_OR					{$$ = new Node(LOGICOP_T, $1)}	//||
 		;
 
 bitwise_op	:
-		ADDRESS_OR_BITWISE_AND_T			{}	//&
-		| BITWISE_INVERSE_T				{}	//~
-		| BITWISE_LEFT_T				{}	//<<
-		| BITWISE_OR_T					{}	//|
-		| BITWISE_RIGHT_T				{}	//>>
-		| BITWISE_XOR_T					{}	//^
+		ADDRESS_OR_BITWISE_AND				{$$ = new Node(BITOP_T, $1)}	//&
+		| BITWISE_INVERSE				{$$ = new Node(BITOP_T, $1)}	//~
+		| BITWISE_LEFT					{$$ = new Node(BITOP_T, $1)}	//<<
+		| BITWISE_OR					{$$ = new Node(BITOP_T, $1)}	//|
+		| BITWISE_RIGHT					{$$ = new Node(BITOP_T, $1)}	//>>
+		| BITWISE_XOR					{}	//^
 		;
 
 qualifier_list	:
@@ -249,35 +305,35 @@ qualifier_list	:
 		| qualifier					{}	//const
 		;
 
-type_cast	:					//(const unsigned int**const*)
-		OPEN_BRACKET_T type CLOSE_BRACKET_T		{}
+type_cast	:						//(const unsigned int**const*)
+		OPEN_BRACKET type CLOSE_BRACKET			{}
 		;
 
 unknown		:
-		UNKNOWN					{std::cout << "Unknown value found " << $$ << std::endl;}
+		UNKNOWN						{std::cout << "Unknown value found: " << $$ << std::endl;}
 		;
 
 arithmetic_op	:
-		ARITHMETIC_T					{}
-		| MULT_OR_POINTER_T				{}
+		ARITHMETIC					{$$ = new Node(ARROP_T, $1)}
+		| MULT_OR_POINTER				{$$ = new Node(ARROP_T, $1)}
 		;
 
 if_cond		:
-		IF_T OPEN_BRACKET_T expr CLOSE_BRACKET_T	{}
+		IF OPEN_BRACKET expr CLOSE_BRACKET		{}
 		;
 
 while_cond	:
-		WHILE_T OPEN_BRACKET_T expr CLOSE_BRACKET_T bracketed_expr_list 
+		WHILE OPEN_BRACKET expr CLOSE_BRACKET bracketed_expr_list 
 								{}
 		;
 
 while_expr	:
 		while_cond bracketed_expr_list			{}			//while(true){...} 
-		| DO_T bracketed_expr_list while_cond EOS_T	{}			//do{...}while(true);
+		| DO bracketed_expr_list while_cond EOS		{}			//do{...}while(true);
 		;
 
 bracketed_expr_list :
-		OPEN_CURLY_BRACKET_T expr_list CLOSE_CURLY_BRACKET_T
+		OPEN_CURLY_BRACKET expr_list CLOSE_CURLY_BRACKET
 								{}
 		| expr						{}			//If it is only a single expression, brackets are not needed
 		;
@@ -292,17 +348,17 @@ if_expr		:
 		;
 
 switch_cond	:
-		SWITCH_T OPEN_BRACKET_T expr CLOSE_BRACKET_T	{}
+		SWITCH OPEN_BRACKET expr CLOSE_BRACKET		{}
 		;
 
 switch_expr	:
-		switch_cond OPEN_CURLY_BRACKET_T case_list CLOSE_CURLY_BRACKET_T
+		switch_cond OPEN_CURLY_BRACKET case_list CLOSE_CURLY_BRACKET
 								{}
 		;
 
 case_stat	:
-		CASE_T const_expr COLON_T expr_list		{}
-		| CASE_T const_expr COLON_T bracketed_expr_list	{}
+		CASE const_expr COLON expr_list			{}
+		| CASE const_expr COLON bracketed_expr_list	{}
 		;
 
 expr_list 	:
@@ -316,29 +372,33 @@ case_list 	:
 		;
 
 expr		:
-		unary_expr					{}
-		| binary_expr					{}
-		| switch_expr					{}
-		| if_expr					{}
-		| while_expr					{}
-		| for_expr					{}
+		unary_expr					{$$ = $1;}
+		| binary_expr					{$$ = $1;}
+		| switch_expr					{$$ = $1;}
+		| if_expr					{$$ = $1;}
+		| while_expr					{$$ = $1;}
+		| for_expr					{$$ = $1;}
 		;
 
 unary_expr	:
+		number						{$$ = $1;}
+		| id						{$$ = new Node(EXPR_T, $1);}
+		| address_id					{$$ = $1;}
 		;				
 
 binary_expr	:
 		;
 
 assign_expr	:
-		id EQUALS_T expr				{}
+		expr EQUALS expr				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), $3);}
+		| expr compound_assign expr			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, $1, $2, $3));}
 		;
 
 const_expr	:
 		;
 
 for_cond	:
-		FOR_T OPEN_BRACKET_T expr EOS_T expr EOS_T expr CLOSE_BRACKET_T
+		FOR OPEN_BRACKET expr EOS expr EOS expr CLOSE_BRACKET
 								{}
 		;
 
@@ -347,12 +407,8 @@ for_expr	:
 		;
 
 struct_def_param_list:
-		struct_def_param_list EOS_T variable_dec	{}		//int x; int y; char z ...
+		struct_def_param_list EOS variable_dec		{}		//int x; int y; char z ...
 		| variable_dec					{}
-		;
-
-test		:								//For debugging purposes
-		type						{}
 		;
 
 %%
@@ -363,7 +419,12 @@ int main()
 	return 0;
 }
 
-int yyerror()
+
+
+void yyerror (char const *s)
 {
+
+  std::cerr << s << std::endl;
 }
+
 
