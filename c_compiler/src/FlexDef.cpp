@@ -1,6 +1,10 @@
 
 
 #include "../includes/FlexDef.h"
+#include <algorithm>
+#include <iostream>
+
+abstractNode* root = NULL;
 
 Node::Node(tokType id, std::string val)
 	:id(id){
@@ -21,15 +25,26 @@ parserNode::~parserNode(){
 			delete RHS;
 };
 
-variableNode::variableNode(tokType id, std::string val, type_t type)
-	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T),type(type)
+variableNode::variableNode(tokType id, std::string val, type_t type, std::string namespacev)
+	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T),type(type), namespacev(namespacev)
 {
 		Node::id = id;
 		Node::val = val;
 };
 
-void variableNode::evaluateModifiers(const std::vector<std::string> modifiers){	//throws modifiers_not_used_exception
-	for(int i = 0; i < modifiers.size(); i++)
+struct find_type : std::unary_function<type_s, bool> {
+    	std::string namespacev;
+	std::string name;
+    	find_type(std::string namespacev, std::string name):namespacev(namespacev), name(name) { }
+    	bool operator()(type_s const& s) const {
+        	return s.namespacev == namespacev && s.name == name;
+    	}
+};
+
+void variableNode::evaluateModifiers(const list_t modifiers){	//throws modifiers_not_used_exception
+	
+
+	/*for(int i = 0; i < modifiers.size(); i++)
 	{
 		if(modifiers[i] ==  "long" && length == NULLL_T)
 			length = LONG_T;
@@ -49,10 +64,36 @@ void variableNode::evaluateModifiers(const std::vector<std::string> modifiers){	
 			storage = EXTERN_T;
 		else{}
 			//throw new modifiers_not_used_exception();
-	}
+	}*/
 }
 
-type_t getType(const char* name)
+type_t getType(const char* name, std::string namespacev)
 {
+	
+	std::list<type_s>::iterator findIter = std::find_if(types.begin(), types.end(), find_type(namespacev,name));
+	return (findIter != types.end()? &(*findIter):NULL);
 }
-abstractNode* root;
+
+type_t addType(std::string namespacev, std::string name, type_s* base, std::vector<struct_member> members)
+{
+	type_s newType;
+	newType.namespacev = namespacev;
+	newType.name = name;
+	newType.base = base;
+	newType.members = members;
+	types.insert(types.end(), newType);
+	return &(types.back());
+}
+
+std::vector<struct_member> build_struct_members(const struct_list_t memberList)
+{
+	std::vector<struct_member> members;
+	std::list<struct_member>::iterator i;
+	for( i = memberList->begin(); i != memberList->end(); i++)
+	{
+		members.push_back(*i);
+	}
+	return members;
+}
+
+std::list<type_s> types;

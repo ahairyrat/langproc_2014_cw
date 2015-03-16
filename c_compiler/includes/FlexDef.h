@@ -3,11 +3,25 @@
 #define	_FLEXDEF_H
 
 #include <string>
+#include <list>
 #include <vector>
 
 #define NULL_S ""
 
-typedef std::string* type_t;
+struct type_s;
+
+struct struct_member{std::string id; type_s* type; int value;};
+
+struct type_s{
+	std::string namespacev;
+	std::string name;
+	type_s* base;
+	std::vector<struct_member> members;
+};
+
+typedef type_s* type_t;
+typedef std::list<std::string>* list_t;
+typedef std::list<struct_member>* struct_list_t;
 
 enum tokType{
 	TYPEDEF_T,
@@ -67,26 +81,26 @@ public:
 
 class variableNode : public Node{
 	public:
+	std::string namespacev;
 	storType storage;
 	signType sign;
 	lenType length;
 	
 	type_t type;
 
-	variableNode(tokType id, std::string val, type_t type);
-	void evaluateModifiers(const std::vector<std::string> modifiers);
+	variableNode(tokType id, std::string val, type_t type, std::string namespacev);
+	void evaluateModifiers(const list_t modifiers);
 };
 
-template <typename T>
-std::vector<T> appendVector(std::vector<T> &a, std::vector<T> &b){		//Appends vector b onto a and returns a
-		a.reserve(a.size() + b.size());
-		a.insert(a.end(), b.begin(), b.end());
-		b.clear();
-		return a;
-}
+extern type_t getType(const char* name, std::string namespacev);
 
-extern type_t getType(const char* name);
 
 extern abstractNode* root;
+
+extern std::list<type_s> types;
+
+type_t addType(std::string namespacev, std::string name, type_s* base, std::vector<struct_member> members);
+
+std::vector<struct_member> build_struct_members(const struct_list_t memberList); 
 	
 #endif
