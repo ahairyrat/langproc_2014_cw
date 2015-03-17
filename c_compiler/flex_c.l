@@ -8,6 +8,7 @@
 	#include "includes/FlexDef.h"
 	#include "CParser.hpp"
 
+	int isType(char* string);
 %}
 
 AMPERSAND						\&
@@ -139,7 +140,7 @@ NUMBER_ID						0[a-zA-Z]
 {XOR}								columnnum++;yylval.str = strdup(yytext);return BITWISE_XOR;
 
 	/*The following values may match any of the above so it is best to seperate them*/
-{ID}								columnnum++;yylval.str = strdup(yytext);return ID;
+{ID}								columnnum++;yylval.str = strdup(yytext);return isType(yytext);
 {NUMBER_ID}?{NUMBER}L?						columnnum++;yylval.str = strdup(yytext);return INT;
 {NUMBER}{FULL_STOP}{NUMBER}L?					columnnum++;yylval.str = strdup(yytext);return FLOAT;
 [ \t]+								/*Consumes all whitespace*/
@@ -148,4 +149,10 @@ NUMBER_ID						0[a-zA-Z]
 
 %%
 
-
+int isType(char* string)
+{
+	if(getType(string, "type") == NULL &&  getType(string, "enum") == NULL && getType(string, "struct") == NULL && getType(string, "union") == NULL)
+		return ID;
+	else
+		return TYPE;
+}

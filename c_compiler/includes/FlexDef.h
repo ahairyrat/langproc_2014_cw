@@ -36,7 +36,8 @@ enum tokType{
 	ASSIGN_T,
 	LOGICOP_T,
 	BITOP_T,
-	ARROP_T
+	ARROP_T,
+	UNOP_T
 };
 
 enum storType{
