@@ -8,29 +8,83 @@ abstractNode* root = NULL;
 
 Node::Node(tokType id, std::string val)
 	:id(id){
-		this -> val = val;
+	this -> node_type = "baseNode";
+	this -> val = val;
 };
 
 Node::~Node(){};
 	
 parserNode::parserNode(tokType id, std::string val, abstractNode* LHS, abstractNode* OP, abstractNode* RHS)
 	:LHS(LHS),OP(OP),RHS(RHS){
-		Node::id = id;
-		Node::val = val;
+	Node::node_type = "parserNode";
+	Node::id = id;
+	Node::val = val;
 };
 
-parserNode::~parserNode(){
-			delete LHS;
-			delete OP;
-			delete RHS;
+parserNode::~parserNode()
+{
+	delete LHS;
+	delete OP;
+	delete RHS;
 };
 
 variableNode::variableNode(tokType id, std::string val, type_t type, std::string namespacev)
 	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T),type(type), namespacev(namespacev)
 {
-		Node::id = id;
-		Node::val = val;
+	Node::node_type = "variableNode";
+	Node::id = id;
+	Node::val = val;
 };
+
+castNode::castNode(tokType id, type_t castType)
+	:castType(castType)
+{
+	Node::node_type = "castNode";
+	Node::id = id;
+	Node::val = NULL_S;
+};
+
+forNode::forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat)
+	:initial(initial),condition(condition), repeat(repeat)
+{
+	Node::node_type = "forNode";
+	Node::id = id;
+	Node::val = val;
+}
+
+forNode::~forNode()
+{
+	delete initial;
+	delete condition;
+	delete repeat;
+}
+
+functionNode::functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code)
+	:code(code)
+{
+	Node::node_type = "functionNode";
+	Node::id = id;
+	Node::val = val;
+	def = functionDef;
+}
+
+functionNode::~functionNode()
+{
+	delete code;
+	delete def;
+}
+
+functionDefNode::functionDefNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters)
+	:parameters(parameters)
+{
+	Node::id = id;
+	Node::val = variableDef -> val;
+	storage = variableDef -> storage;
+	sign = variableDef -> sign;
+	length = variableDef -> length;
+	
+	type = variableDef -> type;
+}
 
 struct find_type : std::unary_function<type_s, bool> {
     	std::string namespacev;
@@ -74,6 +128,14 @@ type_t getType(const char* name, std::string namespacev)
 	return (findIter != types.end()? &(*findIter):NULL);
 }
 
+type_t getPointer(const char* name)
+{
+	
+	std::list<type_s>::iterator findIter = std::find_if(types.begin(), types.end(), find_type(NULL_S,name));
+	return (findIter != types.end()? &(*findIter):NULL);
+}
+
+
 type_t addType(std::string namespacev, std::string name, type_s* base, std::vector<struct_member> members)
 {
 	type_s newType;
@@ -83,6 +145,17 @@ type_t addType(std::string namespacev, std::string name, type_s* base, std::vect
 	newType.members = members;
 	types.insert(types.end(), newType);
 	return &(types.back());
+}
+
+type_t addPointer(std::string name, type_s* deref)
+{
+	type_s newType;
+	newType.namespacev = NULL_S;
+	newType.name = name;
+	newType.base = deref;
+	newType.members = *(new std::vector<struct_member>());
+	pointers.insert(pointers.end(), newType);
+	return &(pointers.back());
 }
 
 std::vector<struct_member> build_struct_members(const struct_list_t memberList)
@@ -97,3 +170,5 @@ std::vector<struct_member> build_struct_members(const struct_list_t memberList)
 }
 
 std::list<type_s> types;
+
+std::list<type_s> pointers;

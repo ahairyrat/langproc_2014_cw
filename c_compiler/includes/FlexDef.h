@@ -24,6 +24,7 @@ typedef std::list<std::string>* list_t;
 typedef std::list<struct_member>* struct_list_t;
 
 enum tokType{
+	NULL_T = 0,
 	TYPEDEF_T,
 	TYPE_T,
 	NAME_T,
@@ -37,7 +38,15 @@ enum tokType{
 	LOGICOP_T,
 	BITOP_T,
 	ARROP_T,
-	UNOP_T
+	UNOP_T,
+	RETURNOP_T,
+	CAST_T,
+	FOR_COND_T,
+	LOOP_T,
+	FUNC_T,
+	WHILE_T,
+	IF_T,
+	FUNC_DEF_T
 };
 
 enum storType{
@@ -64,6 +73,7 @@ class abstractNode{};
 
 class Node : public abstractNode{
 public:
+	std::string node_type;
 	tokType id;
 	std::string val;
 	Node(){};
@@ -81,7 +91,7 @@ public:
 };
 
 class variableNode : public Node{
-	public:
+public:
 	std::string namespacev;
 	storType storage;
 	signType sign;
@@ -93,15 +103,58 @@ class variableNode : public Node{
 	void evaluateModifiers(const list_t modifiers);
 };
 
-extern type_t getType(const char* name, std::string namespacev);
+class forNode : public Node{
+public:
+	abstractNode* initial;
+	abstractNode* condition;
+	abstractNode* repeat;
+	forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat);
+	virtual ~forNode();
+};
 
+class castNode : public Node{
+public:
+	type_t castType;
+	castNode(tokType id, type_t castType);
+};
+
+class functionNode : public Node{
+public:
+	abstractNode* code;
+	abstractNode* def;
+	functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code);
+	virtual ~functionNode();
+};
+
+class functionDefNode : public Node{
+public:
+	std::string namespacev;
+	storType storage;
+	signType sign;
+	lenType length;
+	
+	type_t type;
+
+	std::vector<struct_member> parameters;
+	functionDefNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters);
+};
+
+
+type_t getType(const char* name, std::string namespacev);
+
+type_t getPointer(const char* name);
 
 extern abstractNode* root;
 
 extern std::list<type_s> types;
 
+extern std::list<type_s> pointers;
+
 type_t addType(std::string namespacev, std::string name, type_s* base, std::vector<struct_member> members);
 
+type_t addPointer(std::string name, type_s* deref);
+
 std::vector<struct_member> build_struct_members(const struct_list_t memberList); 
+
 	
 #endif

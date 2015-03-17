@@ -1,4 +1,7 @@
 
+
+//code does not take into account mathematic precedence
+
 %code requires{
 	extern int yylex();
 	extern int linenum, columnnum;
@@ -11,8 +14,11 @@
 	#include <string>
 	#include <cstring>
 	#include <sstream>
+	#include <iomanip>
 
 	void yyerror (char const *s);
+
+	void printTree(abstractNode* node, int indent);
 
 	int linenum = 1;
 	int columnnum = 1;
@@ -29,50 +35,34 @@
 	struct_list_t s_list;
 	abstractNode* node;
 	type_t type;
+	int int_t;
 }
 
 %token<str> ADDRESS_OR_BITWISE_AND ARITHMETIC AUTO BITWISE_INVERSE BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR BREAK CASE CHAR CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET COLON COMMA CONST CONTINUE DECREMENT DEFAULT DO ELLIPSES ELSE ENUM EQUALS EOS EXTERN FLOAT FOR FULL_STOP GOTO GREATER_THAN_EQUALS GREATER_THAN ID IF INCREMENT INT INVERSE LESS_THAN_EQUALS LESS_THAN LOGICAL_AND LOGICAL_EQUALS LOGICAL_OR MULT_OR_POINTER NOT_EQUALS NOT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET POINTER_MEMBER REGISTER RETURN SIZEOF STATIC STRING STRUCT SWITCH TYPEDEF TYPE_SIGNED TYPE_UNSIGNED TYPE_PROMOTION TYPE_LONG TYPE_SHORT TYPE UNION UNKNOWN VOLATILE WHILE CONDITIONAL_OPERATOR
 
-%type<node> variable_dec_single pointer_list variable_dec number parameter_list  unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_expr while_expr if_expr for_expr compound_assign logic_op arithmetic_op bitwise_op expr_list program_block bracketed_expr_list function_dec program def_expr rexpr lexpr cond_expr all_expr unary_op
+%type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_expr while_expr if_expr for_expr compound_assign logic_op arithmetic_op bitwise_op expr_list program_block bracketed_expr_list function_dec program def_expr rexpr lexpr cond_statement statement unary_op return type_cast for_cond while_cond if_cond
 
-%type<str> qualifier storage length signed modifier address id address_id
+%type<str> qualifier storage length signed modifier address id address_id array id_or_array pointer
 
 %type<list> address_list id_list modifier_list qualifier_list
 
-%type<type> basic_type pointer type non_pointer_type non_pointer_basic_type union_def modified_union  union union_use enum enum_def enum_use modified_enum struct_use struct_def struct modified_struct data_structure
+%type<type> basic_type type non_pointer_type non_pointer_basic_type union_def modified_union  union union_use enum enum_def enum_use modified_enum struct_use struct_def struct modified_struct data_structure
 
-%type<s_list> struct_def_param_list enum_def_param_list
+%type<s_list> struct_def_param_list enum_def_param_list parameter_list
+
+%type<int_t> pointer_list
 
 %right EQUALS 
 
 %left ARITHMETIC ADDRESS_OR_BITWISE_AND BITWISE MULT_OR_POINTER BITWISE_INVERSE  BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR NOT
 
-%start	test
+%start	start
 
 %%
 
-test		:						//For debugging purposes
-		program					{	root = $1;
-								std::cout << "Test successful" << std::endl;
-								std::list<type_s>::iterator i;
-								for( i = types.begin(); i != types.end(); i++)
-								{
-								std::cout << i -> namespacev << " " << i -> name;
-								if(i -> base != NULL)
-								{
-									type_s* base_type = &(*i);
-									while(base_type -> base != NULL)
-										base_type = base_type -> base;
-									std::cout << "->" << base_type -> name;
-								}
-								else std::cout << "-> No base class";
-									
-								std::cout << std::endl;				
-								}
-							}
+start		:
+		program						{root = $1};
 		;
-
-
 
 typedef		:
 		TYPEDEF variable_dec_single			{//Does not need to input into AST
@@ -100,8 +90,8 @@ pointer 	:
 		;
 
 pointer_list 	:						//Unbounded list of pointers
- 		pointer pointer_list 				{}
-		| pointer					{}
+ 		pointer pointer_list 				{$$ = $2 + 1;}
+		| pointer					{$$ = 1}
 		;
 
 qualifier 	:
@@ -117,7 +107,7 @@ storage 	:
 		;
 
 variable_dec_single:
-		type id						{ if($1 != NULL)	
+		type id_or_array				{ if($1 != NULL)	
 									$$ = new variableNode(VAR_T, $2, $1, "type");
 								  else
 								  {
@@ -147,14 +137,40 @@ variable_dec	:
 		;
 
 id_list		:						 //unbounded list of comma seperate identifiers
-		id COMMA id_list				{$$ = $3; $$ -> insert($$ -> begin(), *(new std::string($1)));}
-		| id COMMA id						{$$ = new std::list<std::string>;
+		id_or_array COMMA id_list			{$$ = $3; $$ -> insert($$ -> begin(), *(new std::string($1)));}
+		| id_or_array COMMA id_or_array					{$$ = new std::list<std::string>;
 									$$ -> insert($$ -> end(), *(new std::string($1)));
-									$$ -> insert($$ -> end(), *(new std::string($3))); }
+									$$ -> insert($$ -> end(), *(new std::string($3))); 
+								}
+		;
+
+id_or_array	:
+		id array					{$$ = (char*)malloc(strlen($1)+strlen($2)+1);
+									$$ = '\0';
+    									strcat($$,$1);
+   								 	strcat($$,$2);
+								}
+		| id						{$$ = $1;}
 		;
 
 type 		:
-		 non_pointer_type pointer_list 			{}	//int x***
+		 non_pointer_type pointer_list 			{
+									std::stringstream ss;
+									$$ = getType(($1 -> name).c_str(), $1 -> namespacev);	//check if basetype exists
+									if($$ != NULL)
+									{
+										ss << $1 -> name;
+										for(int i = 0; i < $2; i++)
+										{
+											ss << '*';
+											if(($$ = getPointer(ss.str().c_str())) == NULL)
+												$$ = addPointer(ss.str(), $$);			//Adds all missing pointers in the chain to the current pointer
+										}
+									}
+									else
+										std::cout << "The type " << $1 -> name << " does not exist" << std::endl;
+											
+								}	//int x***
 		| non_pointer_type				{$$ = $1;}	//int x
 		;
 
@@ -193,9 +209,7 @@ id		:
 		;
 
 address_id	:
-		address_list id					{/*Pop back and add for every address item*/
-									$$ = $2;	
-								}
+		address_list id					{$$ = $2;}
 		;
 
 address		:
@@ -250,11 +264,12 @@ struct 		:
 
 function_def 	:
 		function_dec bracketed_expr_list
-								{}
+								{$$ = new functionNode(FUNC_T, NULL_S, $1, $2);}
 		;
 
 function_dec	:
-		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET	{}
+		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET	{$$ = new functionDefNode(FUNC_DEF_T, (variableNode*)((Node*)$1), build_struct_members($3));
+										 delete $1;}
 		;
 
 modifier 	:
@@ -282,24 +297,36 @@ number 		:
 		;
 
 parameter_list 	:				//unbounded list of variable declerations
-		 parameter_list COMMA variable_dec_single 	{}
-		| variable_dec_single				{}
+		 variable_dec_single COMMA parameter_list  	{$$ = $3;
+								 variableNode* variable = (variableNode*)((Node*)$1);
+								 struct_member newMember;
+								 newMember.id = variable -> val;
+								 newMember.type = variable -> type;
+								 $$ -> insert($$ -> end(), newMember);
+								 delete variable;}
+		| variable_dec_single			        {$$ = new std::list<struct_member>();
+								 variableNode* variable = (variableNode*)((Node*)$1);
+								 struct_member newMember;
+								 newMember.id = variable -> val;
+								 newMember.type = variable -> type;
+								 $$ -> insert($$ -> end(), newMember);
+								 delete variable;}
 		;
 
 program_block	:
 		variable_dec EOS				{$$ = $1;}
-		| def_expr					{}
-		| variable_dec EQUALS rexpr EOS			{}
+		| def_expr					{$$ = NULL}
+		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), $3);}
 		| bracketed_expr_list				{$$ = $1}
 		| typedef EOS					{$$ = NULL}
-		| function_def EOS				{$$ = $1}
+		| function_def					{$$ = $1}
 		| function_dec EOS				{$$ = $1}
 		| unknown
 		;
 
 program		:
-		program program_block				{$$ = new parserNode(EXPR_T, NULL_S, $1, NULL, $2);}
-		| program_block					{$$ = new parserNode(EXPR_T,NULL_S, $1,NULL,NULL);}
+		program program_block				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL, $2);}
+		| program_block					{$$ = $1}
 		;
 
 enum_def	:
@@ -381,7 +408,7 @@ modified_union	:
 		;
 
 compound_assign	:
-		NOT EQUALS					{}	//!=		
+		NOT EQUALS					{$$ = new Node(LOGICOP_T, $1)}	//!=		
 		| arithmetic_op EQUALS				{$$ = $1}	//+= -= *= /=
 		| bitwise_op EQUALS				{$$ = $1}	//^= <<= >>= etc.
 		;
@@ -403,7 +430,7 @@ bitwise_op	:
 		| BITWISE_LEFT					{$$ = new Node(BITOP_T, $1)}	//<<
 		| BITWISE_OR					{$$ = new Node(BITOP_T, $1)}	//|
 		| BITWISE_RIGHT					{$$ = new Node(BITOP_T, $1)}	//>>
-		| BITWISE_XOR					{}	//^
+		| BITWISE_XOR					{$$ = new Node(LOGICOP_T, $1)}	//^
 		;
 
 qualifier_list	:
@@ -411,7 +438,7 @@ qualifier_list	:
 		;
 
 type_cast	:						//(const unsigned int**const*)
-		OPEN_BRACKET type CLOSE_BRACKET			{}
+		OPEN_BRACKET type CLOSE_BRACKET			{$$ = new castNode(TYPE_T, $2);}
 		;
 
 unknown		:
@@ -435,24 +462,24 @@ while_cond	:
 
 while_expr	:
 		while_cond bracketed_expr_list			{}			//while(true){...} 
-		| while_cond all_expr				{}			//while(true)...
+		| while_cond statement				{}			//while(true)...
 		| DO bracketed_expr_list while_cond EOS		{}			//do{...}while(true);
-		| DO all_expr while_cond EOS			{}			//do...while(true)
+		| DO statement while_cond EOS			{}			//do...while(true)
 		;
 
 bracketed_expr_list :
 		OPEN_CURLY_BRACKET expr_list CLOSE_CURLY_BRACKET
-								{}
+								{$$ = $2;}
 		;
 
 expr_list	:
-		expr_list all_expr				{$$ = new parserNode(EXPR_T, NULL_S, $1, NULL,$2); }
-		| all_expr					{$$ = $1}
+		expr_list statement				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL,$2); }
+		| statement					{$$ = $1}
 		;
 
 if_expr		:
-		if_cond bracketed_expr_list			{std::cout << "found if with multiple statement" << std::endl;}
-		| if_cond all_expr				{std::cout << "found if with single statement" << std::endl;}
+		if_cond bracketed_expr_list			{}
+		| if_cond statement				{}
 		;
 
 switch_cond	:
@@ -474,12 +501,13 @@ case_list 	:
 		| case_stat					{}
 		;
 
-all_expr	:
+statement	:
 		expr EOS					{$$ = $1;}
-		| cond_expr					{$$ = $1;}
+		| cond_statement				{$$ = $1;}
+		| return EOS					{$$ = $1;}
 		;
 
-cond_expr	:
+cond_statement	:
 		switch_expr					{$$ = $1;}
 		| if_expr					{$$ = $1;}
 		| while_expr					{$$ = $1;}
@@ -493,8 +521,8 @@ expr		:
 
 lexpr		:
 		unary_expr					{$$ = $1;}
-		| def_expr					{$$ = $1;}
-		| variable_dec					{std::cout << "Found variable dec" << std::endl;$$ = $1;}	
+		| def_expr					{$$ = NULL;}
+		| variable_dec					{$$ = $1;}	
 		;
 
 rexpr 		:
@@ -506,31 +534,33 @@ rexpr 		:
 unary_expr	:
 		number						{$$ = $1;}
 		| id						{$$ = new Node(NAME_T, $1);}
-		| address_id					{$$ = new Node(EXPR_T, $1);}
+		| address_id					{$$ = new Node(NAME_T, $1);}
 		| unary_op id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $2), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $2), $1, new Node(NAME_T, $2)));}
-		| id unary_op					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), $2, new Node(NAME_T, $1)));}
-		| type_cast id					{}
+		| id INCREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, $2), new Node(NAME_T, $1)));}
+		| id DECREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, $2), new Node(NAME_T, $1)));}
+		| type_cast id					{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(CAST_T, NULL_S), new Node(NAME_T, $2));}
 		;				
 
 binary_expr	:
-		lexpr arithmetic_op rexpr			{std::cout << "e + e" << std::endl;$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
+		lexpr arithmetic_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
+		| rexpr arithmetic_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
 		| lexpr logic_op rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
 		| lexpr bitwise_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
 		;
 
 assign_expr	:
-		lexpr EQUALS rexpr				{std::cout << "e = e" << std::endl;$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), $3);}
+		lexpr EQUALS rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), $3);}
 		| lexpr compound_assign rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, $1, $2, $3));}
 		;
 
 for_cond	:
 		FOR OPEN_BRACKET expr EOS expr EOS expr CLOSE_BRACKET
-								{}
+								{$$ = new forNode(FOR_COND_T, NULL_S, $3, $5, $7);}
 		;
 
 for_expr	:
-		for_cond bracketed_expr_list			{}
-		| for_cond all_expr				{}
+		for_cond bracketed_expr_list			{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
+		| for_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
 		;
 
 struct_def_param_list:
@@ -614,7 +644,7 @@ enum_def_param_list:
 		;
 
 def_expr	:
-		data_structure EOS				{}
+		data_structure	EOS				{$$ = NULL}
 		;
 
 unary_op	:
@@ -622,6 +652,15 @@ unary_op	:
 		| DECREMENT					{$$ = new Node(UNOP_T, $1)}
 		| TYPE_PROMOTION				{$$ = new Node(UNOP_T, $1)}
 		| INVERSE					{$$ = new Node(UNOP_T, $1)}
+		;
+
+return		:
+		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, NULL_S), $2)}
+		;
+
+array		:
+		OPEN_SQUARE_BRACKET number CLOSE_SQUARE_BRACKET	{}
+		| OPEN_SQUARE_BRACKET id CLOSE_SQUARE_BRACKET	{}
 		;
 
 %%
@@ -635,16 +674,40 @@ int main()
 	addType("type", "float", NULL, *(new std::vector<struct_member>()));
 	addType("type", "double", NULL, *(new std::vector<struct_member>()));
 	yyparse();
+	printTree(root, 0);
+	std::cout << std::endl;
 	return 0;
 }
 
 
 
 void yyerror (char const *s)
-{
-
-	
+{	
   std::cerr << s << " at " << yylval.str  << " " << columnnum << std::endl;
 }
 
+void printTree(abstractNode* node, int indent)
+{
+	Node* currNode = (Node*)node;
+    	if(currNode != NULL)
+	{
+		if (currNode -> node_type == "parserNode") {
+			std::cout<< currNode->id << std::endl;
+        		if(((parserNode*)currNode)->LHS) printTree(((parserNode*)currNode)->LHS, indent+4);
+        		if(((parserNode*)currNode)->RHS) printTree(((parserNode*)currNode)->RHS, indent+4);
+		}
+		else if (currNode -> node_type == "baseNode") {
+			std::cout << currNode -> id << ' ' << currNode -> val;
+		}
+		else if (currNode -> node_type == "castNode") {
+			std::cout << currNode -> id << ' ' << ((castNode*)currNode) -> castType -> name;
+		}
+		else if (currNode -> node_type == "variableNode") {
+			std::cout << currNode -> id << ' ' << ((variableNode*)currNode) -> type -> name <<  ' ' << currNode -> val;
+		}
+		if (indent)
+			std::cout << std::setw(indent) << ' ';
+	}
+      	
+}
 
