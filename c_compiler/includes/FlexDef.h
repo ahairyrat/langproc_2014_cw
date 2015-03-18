@@ -44,9 +44,13 @@ enum tokType{
 	FOR_COND_T,
 	LOOP_T,
 	FUNC_T,
-	WHILE_T,
-	IF_T,
-	FUNC_DEF_T
+	WHILE_COND_T,
+	IF_COND_T,
+	FUNC_DEF_T,
+	CONST_T,
+	COND_T,
+	FUNC_CALL_T,
+	PARAM_T
 };
 
 enum storType{
@@ -112,6 +116,15 @@ public:
 	virtual ~forNode();
 };
 
+class condNode : public Node{
+public:
+	abstractNode* condition;
+	abstractNode* cond_true;
+	abstractNode* cond_false;
+	condNode(tokType id, std::string val, abstractNode* condition, 	abstractNode* cond_true, abstractNode* cond_false);
+	virtual ~condNode();
+};
+
 class castNode : public Node{
 public:
 	type_t castType;
@@ -126,7 +139,7 @@ public:
 	virtual ~functionNode();
 };
 
-class functionDefNode : public Node{
+class functionDecNode : public Node{
 public:
 	std::string namespacev;
 	storType storage;
@@ -136,7 +149,15 @@ public:
 	type_t type;
 
 	std::vector<struct_member> parameters;
-	functionDefNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters);
+	functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters);
+};
+
+class functionCallNode : public Node{
+public:
+	abstractNode* parameters;
+
+	functionCallNode(tokType id, std::string val, abstractNode* parameters);
+	virtual ~functionCallNode();
 };
 
 
@@ -155,6 +176,8 @@ type_t addType(std::string namespacev, std::string name, type_s* base, std::vect
 type_t addPointer(std::string name, type_s* deref);
 
 std::vector<struct_member> build_struct_members(const struct_list_t memberList); 
+
+bool parse(std::string fileName);
 
 	
 #endif

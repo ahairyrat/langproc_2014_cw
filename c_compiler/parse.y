@@ -4,7 +4,9 @@
 
 %code requires{
 	extern int yylex();
-	extern int linenum, columnnum;
+	extern int linenum;
+	#include <stdio.h>
+	extern FILE* yyin;
 	#include "includes/FlexDef.h"
 }
 
@@ -14,18 +16,19 @@
 	#include <string>
 	#include <cstring>
 	#include <sstream>
-	#include <iomanip>
+	#include <fstream>
 
 	void yyerror (char const *s);
 
-	void printTree(abstractNode* node, int indent);
-
 	int linenum = 1;
-	int columnnum = 1;
 
 	int anonymousnum = 0;
 
 	int enum_val = 0;
+
+	std::string infileName;
+	
+	bool error = true;
 
 %}
 
@@ -40,7 +43,7 @@
 
 %token<str> ADDRESS_OR_BITWISE_AND ARITHMETIC AUTO BITWISE_INVERSE BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR BREAK CASE CHAR CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET COLON COMMA CONST CONTINUE DECREMENT DEFAULT DO ELLIPSES ELSE ENUM EQUALS EOS EXTERN FLOAT FOR FULL_STOP GOTO GREATER_THAN_EQUALS GREATER_THAN ID IF INCREMENT INT INVERSE LESS_THAN_EQUALS LESS_THAN LOGICAL_AND LOGICAL_EQUALS LOGICAL_OR MULT_OR_POINTER NOT_EQUALS NOT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET POINTER_MEMBER REGISTER RETURN SIZEOF STATIC STRING STRUCT SWITCH TYPEDEF TYPE_SIGNED TYPE_UNSIGNED TYPE_PROMOTION TYPE_LONG TYPE_SHORT TYPE UNION UNKNOWN VOLATILE WHILE CONDITIONAL_OPERATOR
 
-%type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_expr while_expr if_expr for_expr compound_assign logic_op arithmetic_op bitwise_op expr_list program_block bracketed_expr_list function_dec program def_expr rexpr lexpr cond_statement statement unary_op return type_cast for_cond while_cond if_cond
+%type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_statement while_statement if_statement for_statement compound_assign logic_op arithmetic_op bitwise_op statement_list program_block bracketed_statement_list function_dec program def_expr rexpr lexpr cond_statement statement return type_cast for_cond while_cond if_cond const_expr if_main else parameter_send_list function_call
 
 %type<str> qualifier storage length signed modifier address id address_id array id_or_array pointer
 
@@ -120,14 +123,12 @@ variable_dec_single:
 variable_dec_stype:
 		type id_list					{
 								std::list<std::string>::iterator i;
+								$$ = NULL;
 								 if($1 != NULL)
 									for( i = $2->begin(); i != $2->end(); i++)
-									    	$$ = new parserNode(EXPR_T,NULL_S,$$,NULL,new variableNode(VAR_T, *i, $1, "type"));		
+									    	$$ = new parserNode(NULL_T,NULL_S,$$,NULL,new variableNode(VAR_T, *i, $1, $1 -> namespacev));		
 								 else
-								 {
 									std::cout << $1 << "is not a type" << std::endl;
-									$$ = NULL;
-								 }
 								}//int x, y, z
 		;
 
@@ -137,24 +138,24 @@ variable_dec	:
 		;
 
 id_list		:						 //unbounded list of comma seperate identifiers
-		id_or_array COMMA id_list			{$$ = $3; $$ -> insert($$ -> begin(), *(new std::string($1)));}
-		| id_or_array COMMA id_or_array					{$$ = new std::list<std::string>;
+		id_list COMMA id_or_array				{$$ = $1; $$ -> insert($$ -> end(), *(new std::string($3)));}
+		| id_or_array COMMA id_or_array			{$$ = new std::list<std::string>;
 									$$ -> insert($$ -> end(), *(new std::string($1)));
-									$$ -> insert($$ -> end(), *(new std::string($3))); 
+									$$ -> insert($$ -> end(), *(new std::string($3)));
 								}
 		;
 
 id_or_array	:
-		id array					{$$ = (char*)malloc(strlen($1)+strlen($2)+1);
-									$$ = '\0';
-    									strcat($$,$1);
-   								 	strcat($$,$2);
+		id array					{std::stringstream ss;
+								 ss << $2 << $1;
+								 $$ = strdup(ss.str().c_str());
+									 				//VariableNames that start with a -x- are considered arrays of that size x (x can be a number or variable)
 								}
 		| id						{$$ = $1;}
 		;
 
 type 		:
-		 non_pointer_type pointer_list 			{
+		non_pointer_type pointer_list 			{
 									std::stringstream ss;
 									$$ = getType(($1 -> name).c_str(), $1 -> namespacev);	//check if basetype exists
 									if($$ != NULL)
@@ -263,13 +264,19 @@ struct 		:
 		;
 
 function_def 	:
-		function_dec bracketed_expr_list
-								{$$ = new functionNode(FUNC_T, NULL_S, $1, $2);}
+		function_dec bracketed_statement_list		{$$ = new functionNode(FUNC_T, NULL_S, $1, $2);}
 		;
 
 function_dec	:
-		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET	{$$ = new functionDefNode(FUNC_DEF_T, (variableNode*)((Node*)$1), build_struct_members($3));
+		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET	{$$ = new functionDecNode(FUNC_DEF_T, (variableNode*)((Node*)$1), build_struct_members($3));
 										 delete $1;}
+		| variable_dec_single OPEN_BRACKET CLOSE_BRACKET		{$$ = new functionDecNode(FUNC_DEF_T, (variableNode*)((Node*)$1), *(new std::vector<struct_member>()));
+										 delete $1;}
+		;
+
+function_call 	:
+		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{$$ = new functionCallNode(FUNC_CALL_T, $1, $3);}
+		| id OPEN_BRACKET CLOSE_BRACKET				{$$ = new functionCallNode(FUNC_CALL_T, $1, NULL);}
 		;
 
 modifier 	:
@@ -292,8 +299,8 @@ modified_struct :
 		;
 
 number 		:
-		INT						{$$ = new Node(CONST_VAL_T, $1);}	//01234, 0x134, 0b1111
-		| FLOAT						{$$ = new Node(CONST_VAL_T, $1);}	//0213.21414
+		INT						{$$ = new variableNode(CONST_T, $1, getType("int", "type"), "const")}	//01234, 0x134, 0b1111
+		| FLOAT						{$$ = new variableNode(CONST_T, $1, getType("float", "type"), "const")}	//0213.21414
 		;
 
 parameter_list 	:				//unbounded list of variable declerations
@@ -316,12 +323,12 @@ parameter_list 	:				//unbounded list of variable declerations
 program_block	:
 		variable_dec EOS				{$$ = $1;}
 		| def_expr					{$$ = NULL}
-		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), $3);}
-		| bracketed_expr_list				{$$ = $1}
+		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(ASSIGN_T, NULL_S, $1, new Node(ASSIGN_T, $2), $3);}
+		| bracketed_statement_list			{$$ = $1}
 		| typedef EOS					{$$ = NULL}
 		| function_def					{$$ = $1}
 		| function_dec EOS				{$$ = $1}
-		| unknown
+		| unknown					{}
 		;
 
 program		:
@@ -442,58 +449,74 @@ type_cast	:						//(const unsigned int**const*)
 		;
 
 unknown		:
-		UNKNOWN						{std::cout << "Unknown value found: " << $$ << std::endl;}
-		| CONDITIONAL_OPERATOR				{std::cout << "? not implemented yet" <<  std::endl;}
-		| SIZEOF					{std::cout << "sizeof not implemented yet" <<  std::endl;}
+		UNKNOWN						{yyerror("Unknown value found");}
+		| CONDITIONAL_OPERATOR				{yyerror("Not implemented yet");}
+		| SIZEOF					{yyerror("Not implemented yet");}
+		| ELLIPSES					{yyerror("Not implemented yet");}
+		| id FULL_STOP id				{yyerror("Not implemented yet");}
+		| id POINTER_MEMBER id				{yyerror("Not implemented yet");}
 		;
 
 arithmetic_op	:
 		ARITHMETIC					{$$ = new Node(ARROP_T, $1)}
+		| INVERSE					{$$ = new Node(ARROP_T, $1)}
 		| MULT_OR_POINTER				{$$ = new Node(ARROP_T, $1)}
 		;
 
 if_cond		:
-		IF OPEN_BRACKET expr CLOSE_BRACKET		{}
+		IF OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(IF_COND_T, NULL_S, $3, NULL, NULL);}
 		;
 
 while_cond	:
-		WHILE OPEN_BRACKET expr CLOSE_BRACKET		{}
+		WHILE OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(WHILE_COND_T, NULL_S, $3, NULL, NULL);}
 		;
 
-while_expr	:
-		while_cond bracketed_expr_list			{}			//while(true){...} 
-		| while_cond statement				{}			//while(true)...
-		| DO bracketed_expr_list while_cond EOS		{}			//do{...}while(true);
-		| DO statement while_cond EOS			{}			//do...while(true)
+while_statement	:
+		while_cond bracketed_statement_list		{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}			//while(true){...} 
+		| while_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}			//while(true)...
+		| DO bracketed_statement_list while_cond EOS	{$$ = new parserNode(NULL_T, NULL_S, $2, NULL, new parserNode(LOOP_T, NULL_S, $3, NULL, $2));}			//do{...}while(true);
+		| DO statement while_cond EOS			{$$ = new parserNode(NULL_T, NULL_S, $2, NULL, new parserNode(LOOP_T, NULL_S, $3, NULL, $2));}			//do...while(true)
 		;
 
-bracketed_expr_list :
-		OPEN_CURLY_BRACKET expr_list CLOSE_CURLY_BRACKET
+bracketed_statement_list :
+		OPEN_CURLY_BRACKET statement_list CLOSE_CURLY_BRACKET
 								{$$ = $2;}
+		|OPEN_CURLY_BRACKET CLOSE_CURLY_BRACKET
+								{$$ = NULL;}
 		;
 
-expr_list	:
-		expr_list statement				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL,$2); }
+statement_list	:
+		statement_list statement			{$$ = new parserNode(NULL_T, NULL_S, $1, NULL,$2); }
 		| statement					{$$ = $1}
 		;
 
-if_expr		:
-		if_cond bracketed_expr_list			{}
-		| if_cond statement				{}
+if_main		:
+		if_cond bracketed_statement_list		{$$ = new condNode(COND_T, NULL_S, $1, $2, NULL);}
+		| if_cond statement				{$$ = new condNode(COND_T, NULL_S, $1, $2, NULL);}
+		;
+
+if_statement		:
+		if_main else					{$$ = $1; ((condNode*)((Node*)$$)) -> cond_false = $2;}
+		| if_main					{$$ = $1;}
+		;
+
+else		:
+		ELSE bracketed_statement_list			{$$ = $2;}
+		| ELSE statement				{$$ = $2;}
 		;
 
 switch_cond	:
 		SWITCH OPEN_BRACKET expr CLOSE_BRACKET		{}
 		;
 
-switch_expr	:
+switch_statement	:
 		switch_cond OPEN_CURLY_BRACKET case_list CLOSE_CURLY_BRACKET
 								{}
 		;
 
 case_stat	:
-		CASE unary_expr COLON expr_list			{}
-		| CASE unary_expr COLON bracketed_expr_list	{}
+		CASE unary_expr COLON statement_list			{}
+		| CASE unary_expr COLON bracketed_statement_list	{}
 		;
 
 case_list 	:
@@ -508,10 +531,10 @@ statement	:
 		;
 
 cond_statement	:
-		switch_expr					{$$ = $1;}
-		| if_expr					{$$ = $1;}
-		| while_expr					{$$ = $1;}
-		| for_expr					{$$ = $1;}
+		switch_statement				{$$ = $1;}
+		| if_statement					{$$ = $1;}
+		| while_statement				{$$ = $1;}
+		| for_statement					{$$ = $1;}
 		;
 		
 expr		:
@@ -522,7 +545,7 @@ expr		:
 lexpr		:
 		unary_expr					{$$ = $1;}
 		| def_expr					{$$ = NULL;}
-		| variable_dec					{$$ = $1;}	
+		| variable_dec					{$$ = $1;}
 		;
 
 rexpr 		:
@@ -531,14 +554,24 @@ rexpr 		:
 		| unary_expr					{$$ = $1;}
 		;
 
-unary_expr	:
+const_expr	:
 		number						{$$ = $1;}
-		| id						{$$ = new Node(NAME_T, $1);}
+		| id_or_array					{$$ = new Node(NAME_T, $1);}
+		| CHAR						{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);	$$ = new variableNode(CONST_T, tmp, getType("char", "type"), "const");}
+		| STRING					{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);  $$ = new variableNode(CONST_T, tmp, getPointer("char*"), "const");}
+		;
+
+unary_expr	:
+		const_expr					{$$ = $1;}
 		| address_id					{$$ = new Node(NAME_T, $1);}
-		| unary_op id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $2), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $2), $1, new Node(NAME_T, $2)));}
-		| id INCREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, $2), new Node(NAME_T, $1)));}
-		| id DECREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, $2), new Node(NAME_T, $1)));}
-		| type_cast id					{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(CAST_T, NULL_S), new Node(NAME_T, $2));}
+		| INCREMENT id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
+		| DECREMENT id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
+		| INVERSE id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(CONST_T, "0"), new Node(UNOP_T, "-"), new Node(NAME_T, $2));}
+		| id INCREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
+		| id DECREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
+		| type_cast id					{$$ = new parserNode(EXPR_T, NULL_S, NULL, $1, new Node(NAME_T, $2));}
+		| OPEN_BRACKET expr CLOSE_BRACKET		{$$ = $2}
+		| function_call					{}
 		;				
 
 binary_expr	:
@@ -549,17 +582,17 @@ binary_expr	:
 		;
 
 assign_expr	:
-		lexpr EQUALS rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), $3);}
-		| lexpr compound_assign rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,NULL_S), new parserNode(EXPR_T,NULL_S, $1, $2, $3));}
+		lexpr EQUALS rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,$2), $3);}
+		| lexpr compound_assign rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $1, $2, $3));}
 		;
 
 for_cond	:
 		FOR OPEN_BRACKET expr EOS expr EOS expr CLOSE_BRACKET
-								{$$ = new forNode(FOR_COND_T, NULL_S, $3, $5, $7);}
+								{$$ = new forNode(FOR_COND_T, $1, $3, $5, $7);}
 		;
 
-for_expr	:
-		for_cond bracketed_expr_list			{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
+for_statement	:
+		for_cond bracketed_statement_list		{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
 		| for_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
 		;
 
@@ -647,67 +680,68 @@ def_expr	:
 		data_structure	EOS				{$$ = NULL}
 		;
 
-unary_op	:
-		INCREMENT					{$$ = new Node(UNOP_T, $1)}
-		| DECREMENT					{$$ = new Node(UNOP_T, $1)}
-		| TYPE_PROMOTION				{$$ = new Node(UNOP_T, $1)}
-		| INVERSE					{$$ = new Node(UNOP_T, $1)}
-		;
-
 return		:
-		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, NULL_S), $2)}
+		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1), $2)}
 		;
 
 array		:
-		OPEN_SQUARE_BRACKET number CLOSE_SQUARE_BRACKET	{}
-		| OPEN_SQUARE_BRACKET id CLOSE_SQUARE_BRACKET	{}
+		OPEN_SQUARE_BRACKET number CLOSE_SQUARE_BRACKET	{std::stringstream ss;
+								ss << '-';
+								ss << ((Node*)$2) -> val;
+								ss  << '-';
+								delete $2;
+								$$ = strdup(ss.str().c_str());
+								}
+		| OPEN_SQUARE_BRACKET id CLOSE_SQUARE_BRACKET	{std::stringstream ss;
+								ss << '-';
+								ss << $2;
+								ss  << '-';
+								$$ = strdup(ss.str().c_str());}
 		;
+
+parameter_send_list:
+		expr COMMA parameter_send_list			{$$ = new parserNode(PARAM_T, NULL_S, $1, NULL, $3)}
+		| expr						{$$ = $1}
+		;
+
 
 %%
 
-int main()
-{
-	/* add basic types into vector*/
-	addType("type", "int", NULL, *(new std::vector<struct_member>()));
-	addType("type", "char", NULL, *(new std::vector<struct_member>()));
-	addType("type", "void", NULL, *(new std::vector<struct_member>()));
-	addType("type", "float", NULL, *(new std::vector<struct_member>()));
-	addType("type", "double", NULL, *(new std::vector<struct_member>()));
-	yyparse();
-	printTree(root, 0);
-	std::cout << std::endl;
-	return 0;
-}
-
-
-
 void yyerror (char const *s)
 {	
-  std::cerr << s << " at " << yylval.str  << " " << columnnum << std::endl;
-}
-
-void printTree(abstractNode* node, int indent)
-{
-	Node* currNode = (Node*)node;
-    	if(currNode != NULL)
+  	std::cerr << infileName << '(' << linenum << ") " << "Error: " << s << " at\t" << yylval.str << ' ' ;
+	if(infileName != "NULL")
 	{
-		if (currNode -> node_type == "parserNode") {
-			std::cout<< currNode->id << std::endl;
-        		if(((parserNode*)currNode)->LHS) printTree(((parserNode*)currNode)->LHS, indent+4);
-        		if(((parserNode*)currNode)->RHS) printTree(((parserNode*)currNode)->RHS, indent+4);
-		}
-		else if (currNode -> node_type == "baseNode") {
-			std::cout << currNode -> id << ' ' << currNode -> val;
-		}
-		else if (currNode -> node_type == "castNode") {
-			std::cout << currNode -> id << ' ' << ((castNode*)currNode) -> castType -> name;
-		}
-		else if (currNode -> node_type == "variableNode") {
-			std::cout << currNode -> id << ' ' << ((variableNode*)currNode) -> type -> name <<  ' ' << currNode -> val;
-		}
-		if (indent)
-			std::cout << std::setw(indent) << ' ';
-	}
-      	
-}
+		std::ifstream infile;
+		infile.open(infileName.c_str(), std::ifstream::in);
 
+		std::string problemString;
+		int i = linenum;
+		while(!infile.eof() && i > 0)
+		{
+			i--;
+			getline(infile, problemString);
+		}
+		std::cerr << problemString << std::endl;;
+		infile.close();
+	}
+	error = false;
+}
+bool parse(std::string fileName)
+{
+	infileName = fileName;
+	if(fileName != "NULL")
+	{
+		FILE* infile = fopen(fileName.c_str(), "r");
+		if(infile == NULL)
+		{
+			std::cerr << "The file " << fileName << " does not exist" << std::endl;
+			return false;
+		}
+		else
+			yyin = infile;
+	}
+	yyparse();
+	fclose(yyin);
+	return error;
+}

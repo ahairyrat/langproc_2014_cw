@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <iostream>
 
-abstractNode* root = NULL;
-
 Node::Node(tokType id, std::string val)
 	:id(id){
 	this -> node_type = "baseNode";
@@ -59,6 +57,21 @@ forNode::~forNode()
 	delete repeat;
 }
 
+condNode::condNode(tokType id, std::string val, abstractNode* condition, abstractNode* cond_true, abstractNode* cond_false)
+	:condition(condition), cond_true(cond_true),cond_false(cond_false)
+{
+	Node::node_type = "condNode";
+	Node::id = id;
+	Node::val = val;
+}
+
+condNode::~condNode()
+{
+	delete condition;
+	delete cond_true;
+	delete cond_false;
+}
+
 functionNode::functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code)
 	:code(code)
 {
@@ -74,16 +87,30 @@ functionNode::~functionNode()
 	delete def;
 }
 
-functionDefNode::functionDefNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters)
+functionDecNode::functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters)
 	:parameters(parameters)
 {
 	Node::id = id;
+	Node::node_type = "functionDecNode";
 	Node::val = variableDef -> val;
 	storage = variableDef -> storage;
 	sign = variableDef -> sign;
 	length = variableDef -> length;
 	
 	type = variableDef -> type;
+}
+
+functionCallNode::functionCallNode(tokType id, std::string val, abstractNode* parameters)
+	:parameters(parameters)
+{
+	Node::id = id;
+	Node::node_type = "functionCallNode";
+	Node::val = val;
+}
+
+functionCallNode::~functionCallNode()
+{
+	delete parameters;
 }
 
 struct find_type : std::unary_function<type_s, bool> {
@@ -131,8 +158,8 @@ type_t getType(const char* name, std::string namespacev)
 type_t getPointer(const char* name)
 {
 	
-	std::list<type_s>::iterator findIter = std::find_if(types.begin(), types.end(), find_type(NULL_S,name));
-	return (findIter != types.end()? &(*findIter):NULL);
+	std::list<type_s>::iterator findIter = std::find_if(pointers.begin(), pointers.end(), find_type(NULL_S,name));
+	return (findIter != pointers.end()? &(*findIter):NULL);
 }
 
 
@@ -168,7 +195,3 @@ std::vector<struct_member> build_struct_members(const struct_list_t memberList)
 	}
 	return members;
 }
-
-std::list<type_s> types;
-
-std::list<type_s> pointers;
