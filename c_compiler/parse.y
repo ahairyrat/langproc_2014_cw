@@ -8,25 +8,18 @@
 	#include <stdio.h>
 	extern FILE* yyin;
 	#include "includes/FlexDef.h"
+	#include "includes/Errors.h"
 }
 
 %{
 	#include "CParser.hpp"
-	#include <iostream>
-	#include <string>
-	#include <cstring>
 	#include <sstream>
-	#include <fstream>
 
 	void yyerror (char const *s);
-
-	int linenum = 1;
 
 	int anonymousnum = 0;
 
 	int enum_val = 0;
-
-	std::string infileName;
 	
 	bool error = true;
 
@@ -45,7 +38,7 @@
 
 %type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_statement while_statement if_statement for_statement compound_assign logic_op arithmetic_op bitwise_op statement_list program_block bracketed_statement_list function_dec program def_expr rexpr lexpr cond_statement statement return type_cast for_cond while_cond if_cond const_expr if_main else parameter_send_list function_call
 
-%type<str> qualifier storage length signed modifier address id address_id array id_or_array pointer
+%type<str> qualifier storage length signed modifier address id address_id array id_or_array pointer struct_member
 
 %type<list> address_list id_list modifier_list qualifier_list
 
@@ -55,9 +48,9 @@
 
 %type<int_t> pointer_list
 
-%right EQUALS 
+%right EQUALS INVERSE CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET
 
-%left ARITHMETIC ADDRESS_OR_BITWISE_AND BITWISE MULT_OR_POINTER BITWISE_INVERSE  BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR NOT
+%left ARITHMETIC ADDRESS_OR_BITWISE_AND BITWISE MULT_OR_POINTER BITWISE_INVERSE  BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR NOT INCREMENT DECREMENT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET COMMA ELSE IF
 
 %start	start
 
@@ -81,9 +74,7 @@ typedef		:
 basic_type 	:						//int, char, void etc.
 		TYPE						{$$ = getType($1, "type");
 									if($$ == NULL)
-									{
-										std::cout << $1 << " is not a basic type" << std::endl;
-									}
+									yyerror("Is not a basic type");
 								}
 		;
 
@@ -110,13 +101,12 @@ storage 	:
 		;
 
 variable_dec_single:
-		type id_or_array				{ if($1 != NULL)	
+		type id_or_array				{ 
+								  $$ = NULL;
+								  if($1 != NULL)	
 									$$ = new variableNode(VAR_T, $2, $1, "type");
 								  else
-								  {
-									std::cout << $1 << "is not a type" << std::endl;
-									$$ = NULL;
-								  }
+									yyerror("Is not a type");
 								}//int x
 		;
 
@@ -128,7 +118,7 @@ variable_dec_stype:
 									for( i = $2->begin(); i != $2->end(); i++)
 									    	$$ = new parserNode(NULL_T,NULL_S,$$,NULL,new variableNode(VAR_T, *i, $1, $1 -> namespacev));		
 								 else
-									std::cout << $1 << "is not a type" << std::endl;
+									yyerror("Is not a type");
 								}//int x, y, z
 		;
 
@@ -149,9 +139,10 @@ id_or_array	:
 		id array					{std::stringstream ss;
 								 ss << $2 << $1;
 								 $$ = strdup(ss.str().c_str());
-									 				//VariableNames that start with a -x- are considered arrays of that size x (x can be a number or variable)
+									 				//VariableNames that start with a [x] are considered arrays of that size x (x can be a number or variable)
 								}
 		| id						{$$ = $1;}
+		| struct_member					{$$ = $1;}				//VariableNames that start with .x. are struct members, *x* are pointer members
 		;
 
 type 		:
@@ -169,7 +160,7 @@ type 		:
 										}
 									}
 									else
-										std::cout << "The type " << $1 -> name << " does not exist" << std::endl;
+										yyerror("Is not a type");
 											
 								}	//int x***
 		| non_pointer_type				{$$ = $1;}	//int x
@@ -190,17 +181,19 @@ non_pointer_basic_type :
 		basic_type					{$$ = $1}	//int
 		| modifier_list basic_type modifier_list 	{$$ = $2;
 									$1 -> splice($1 -> end(), *$3);
+									yyerror("Not implemented yet");
 									//evaluate modifiers
 								}	//const unsigned int volatile etc.
 		| basic_type modifier_list 			{$$ = $1;
+									yyerror("Not implemented yet");
 									//Evaluate modifiers
 								}	//int unsigned
 		| modifier_list basic_type 			{$$ = $2;
+									yyerror("Not implemented yet");
 									//Evaluate modifiers
 								}	//unsigned int
 		| modifier_list					{$$ = getType("int", "type");
-									if($$ == NULL)
-										addType("type","int", NULL,*(new std::vector<struct_member>()));
+									yyerror("Not implemented yet");
 									//Evaluate modifiers
 								}	//unsigned
 		;
@@ -240,7 +233,7 @@ struct_def 	:					//struct s{...}
 								   if($$ == NULL)
 									$$ = addType("struct",$2, NULL,build_struct_members($4));
 								   else
-									std::cout << $1 << " " << $2 << " already defined" << std::endl;
+									yyerror("Struct has been previously defined");
 								}
 		| STRUCT OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET
 								{
@@ -255,7 +248,8 @@ struct_def 	:					//struct s{...}
 struct_use 	:							//struct s
 		STRUCT id					{$$ = getType($2, "struct");
 								   if($$ == NULL)
-									std::cout << $1 << " " << $2 << " has not been defined" << std::endl;}
+									yyerror("Struct has not been defined");
+								}
 		;
 
 struct 		:
@@ -328,7 +322,7 @@ program_block	:
 		| typedef EOS					{$$ = NULL}
 		| function_def					{$$ = $1}
 		| function_dec EOS				{$$ = $1}
-		| unknown					{}
+		| unknown					{$$ = NULL;}
 		;
 
 program		:
@@ -343,7 +337,7 @@ enum_def	:
 								   if($$ == NULL)
 									$$ = addType("enum",$2, NULL,build_struct_members($4));
 								   else
-									std::cout << $1 << " " << $2 << " already defined" << std::endl;
+									yyerror("Enumerated has been previously defined");
 								enum_val = 0;
 								}
 		| ENUM OPEN_CURLY_BRACKET enum_def_param_list CLOSE_CURLY_BRACKET	
@@ -361,7 +355,7 @@ enum_use	:
 		ENUM id						{
 							 	   $$ = getType($2, "enum");
 								   if($$ == NULL)
-									std::cout << $1 << " " << $2 << " has not been defined" << std::endl;
+									yyerror("Enumerated has not been defined");
 								}
 		;
 
@@ -383,7 +377,7 @@ union_def	:
 								   if($$ == NULL)
 									$$ = addType("union",$2, NULL,build_struct_members($4));
 								   else
-									std::cout << $1 << " " << $2 << " already defined" << std::endl;
+									yyerror("Union has been previously defined");
 								}
 		| UNION OPEN_CURLY_BRACKET struct_def_param_list CLOSE_CURLY_BRACKET	
 								{
@@ -399,7 +393,7 @@ union_use	:
 		UNION id					{
 								   $$ = getType($2, "union");
 								   if($$ == NULL)
-									std::cout << $1 << " " << $2 << " has not been defined" << std::endl;
+									yyerror("Union has not been defined");
 								}
 		;
 
@@ -415,7 +409,7 @@ modified_union	:
 		;
 
 compound_assign	:
-		NOT EQUALS					{$$ = new Node(LOGICOP_T, $1)}	//!=		
+		NOT_EQUALS					{$$ = new Node(LOGICOP_T, $1)}	//!=		
 		| arithmetic_op EQUALS				{$$ = $1}	//+= -= *= /=
 		| bitwise_op EQUALS				{$$ = $1}	//^= <<= >>= etc.
 		;
@@ -449,12 +443,15 @@ type_cast	:						//(const unsigned int**const*)
 		;
 
 unknown		:
-		UNKNOWN						{yyerror("Unknown value found");}
-		| CONDITIONAL_OPERATOR				{yyerror("Not implemented yet");}
-		| SIZEOF					{yyerror("Not implemented yet");}
-		| ELLIPSES					{yyerror("Not implemented yet");}
-		| id FULL_STOP id				{yyerror("Not implemented yet");}
-		| id POINTER_MEMBER id				{yyerror("Not implemented yet");}
+		UNKNOWN						{yyerror("Unknown value found"); exit(1);}
+		| CONDITIONAL_OPERATOR				{yyerror("Not implemented yet"); exit(1);}
+		| SIZEOF					{yyerror("Not implemented yet"); exit(1);}
+		| ELLIPSES					{yyerror("Not implemented yet"); exit(1);}
+		| CONTINUE					{yyerror("Not implemented yet"); exit(1);}
+		| DEFAULT					{yyerror("Not implemented yet"); exit(1);}
+		| BREAK						{yyerror("Not implemented yet"); exit(1);}
+		| GOTO						{yyerror("Not implemented yet"); exit(1);}
+		| COLON						{yyerror("Not implemented yet"); exit(1);}
 		;
 
 arithmetic_op	:
@@ -515,8 +512,8 @@ switch_statement	:
 		;
 
 case_stat	:
-		CASE unary_expr COLON statement_list			{}
-		| CASE unary_expr COLON bracketed_statement_list	{}
+		CASE unary_expr COLON statement_list		{}
+		| CASE unary_expr COLON bracketed_statement_list{}
 		;
 
 case_list 	:
@@ -556,20 +553,20 @@ rexpr 		:
 
 const_expr	:
 		number						{$$ = $1;}
-		| id_or_array					{$$ = new Node(NAME_T, $1);}
+		| id_or_array					{$$ = new variableNode(VAR_T, $1, NULL, "unknown");}
+		| address_id					{$$ = new variableNode(VAR_T, $1, NULL, "unknown");}
 		| CHAR						{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);	$$ = new variableNode(CONST_T, tmp, getType("char", "type"), "const");}
 		| STRING					{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);  $$ = new variableNode(CONST_T, tmp, getPointer("char*"), "const");}
 		;
 
 unary_expr	:
 		const_expr					{$$ = $1;}
-		| address_id					{$$ = new Node(NAME_T, $1);}
-		| INCREMENT id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
-		| DECREMENT id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
-		| INVERSE id					{$$ = new parserNode(EXPR_T, NULL_S, new Node(CONST_T, "0"), new Node(UNOP_T, "-"), new Node(NAME_T, $2));}
-		| id INCREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
-		| id DECREMENT					{$$ = new parserNode(EXPR_T, NULL_S, new Node(NAME_T, $1), new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, new Node(NAME_T, $1), new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
-		| type_cast id					{$$ = new parserNode(EXPR_T, NULL_S, NULL, $1, new Node(NAME_T, $2));}
+		| INCREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
+		| DECREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
+		| INVERSE unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, new Node(CONST_T, "0"), new Node(UNOP_T, "-"), $2);}
+		| unary_expr INCREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
+		| unary_expr DECREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
+		| type_cast unary_expr				{$$ = new parserNode(CAST_T, NULL_S, NULL, $1, $2);}
 		| OPEN_BRACKET expr CLOSE_BRACKET		{$$ = $2}
 		| function_call					{}
 		;				
@@ -682,20 +679,21 @@ def_expr	:
 
 return		:
 		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1), $2)}
+		| RETURN					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1), NULL)}
 		;
 
 array		:
 		OPEN_SQUARE_BRACKET number CLOSE_SQUARE_BRACKET	{std::stringstream ss;
-								ss << '-';
+								ss << '[';
 								ss << ((Node*)$2) -> val;
-								ss  << '-';
+								ss  << ']';
 								delete $2;
 								$$ = strdup(ss.str().c_str());
 								}
 		| OPEN_SQUARE_BRACKET id CLOSE_SQUARE_BRACKET	{std::stringstream ss;
-								ss << '-';
+								ss << '[';
 								ss << $2;
-								ss  << '-';
+								ss  << ']';
 								$$ = strdup(ss.str().c_str());}
 		;
 
@@ -704,29 +702,31 @@ parameter_send_list:
 		| expr						{$$ = $1}
 		;
 
+struct_member 	:	
+		id FULL_STOP id					{std::stringstream ss;
+								ss << '.';
+								ss << $3;
+								ss << '.';
+								ss << $1;
+								$$ = strdup(ss.str().c_str());}
+		| id POINTER_MEMBER id				{std::stringstream ss;
+								ss << '*';
+								ss << $3;
+								ss << '*';
+								ss << $1;
+								$$ = strdup(ss.str().c_str());}
+		;
+		
+
 
 %%
 
 void yyerror (char const *s)
 {	
-  	std::cerr << infileName << '(' << linenum << ") " << "Error: " << s << " at\t" << yylval.str << ' ' ;
-	if(infileName != "NULL")
-	{
-		std::ifstream infile;
-		infile.open(infileName.c_str(), std::ifstream::in);
-
-		std::string problemString;
-		int i = linenum;
-		while(!infile.eof() && i > 0)
-		{
-			i--;
-			getline(infile, problemString);
-		}
-		std::cerr << problemString << std::endl;;
-		infile.close();
-	}
+	printError(s, false);
 	error = false;
 }
+
 bool parse(std::string fileName)
 {
 	infileName = fileName;
@@ -735,7 +735,7 @@ bool parse(std::string fileName)
 		FILE* infile = fopen(fileName.c_str(), "r");
 		if(infile == NULL)
 		{
-			std::cerr << "The file " << fileName << " does not exist" << std::endl;
+			printFileMissing();
 			return false;
 		}
 		else

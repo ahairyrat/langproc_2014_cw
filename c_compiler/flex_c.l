@@ -143,7 +143,7 @@ NUMBER_ID						0[a-zA-Z]
 	/*The following values may match any of the above so it is best to seperate them*/
 {ID}								prevCharNamespace = "type";yylval.str = strdup(yytext);return isType(yytext);
 {NUMBER_ID}?{NUMBER}L?						prevCharNamespace = "type";yylval.str = strdup(yytext);return INT;
-{NUMBER}{FULL_STOP}{NUMBER}L?					prevCharNamespace = "type";yylval.str = strdup(yytext);return FLOAT;
+[0-9]+{FULL_STOP}[0-9]+L?					prevCharNamespace = "type";yylval.str = strdup(yytext);return FLOAT;
 [ \t]+								/*Consumes all whitespace*/
 ^#.*$								/*consumes preprocessor instructions */
 \/\/.*$								/*Consumes in line comments*/

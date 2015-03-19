@@ -2,7 +2,7 @@
 
 #include "../includes/FlexDef.h"
 #include <algorithm>
-#include <iostream>
+
 
 Node::Node(tokType id, std::string val)
 	:id(id){
@@ -17,6 +17,8 @@ parserNode::parserNode(tokType id, std::string val, abstractNode* LHS, abstractN
 	Node::node_type = "parserNode";
 	Node::id = id;
 	Node::val = val;
+
+	typeNode::type = NULL;
 };
 
 parserNode::~parserNode()
@@ -27,19 +29,22 @@ parserNode::~parserNode()
 };
 
 variableNode::variableNode(tokType id, std::string val, type_t type, std::string namespacev)
-	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T),type(type), namespacev(namespacev)
+	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T), namespacev(namespacev)
 {
 	Node::node_type = "variableNode";
 	Node::id = id;
 	Node::val = val;
+
+	typeNode::type = type;
 };
 
 castNode::castNode(tokType id, type_t castType)
-	:castType(castType)
 {
 	Node::node_type = "castNode";
 	Node::id = id;
 	Node::val = NULL_S;
+
+	typeNode::type = castType;
 };
 
 forNode::forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat)
@@ -97,7 +102,7 @@ functionDecNode::functionDecNode(tokType id, variableNode* variableDef, std::vec
 	sign = variableDef -> sign;
 	length = variableDef -> length;
 	
-	type = variableDef -> type;
+	typeNode::type = variableDef -> type;
 }
 
 functionCallNode::functionCallNode(tokType id, std::string val, abstractNode* parameters)

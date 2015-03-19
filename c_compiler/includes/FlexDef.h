@@ -2,9 +2,9 @@
 #ifndef	_FLEXDEF_H
 #define	_FLEXDEF_H
 
-#include <string>
 #include <list>
 #include <vector>
+#include <string>
 
 #define NULL_S ""
 
@@ -25,7 +25,6 @@ typedef std::list<struct_member>* struct_list_t;
 
 enum tokType{
 	NULL_T = 0,
-	TYPEDEF_T,
 	TYPE_T,
 	NAME_T,
 	VAR_T,
@@ -40,7 +39,6 @@ enum tokType{
 	ARROP_T,
 	UNOP_T,
 	RETURNOP_T,
-	CAST_T,
 	FOR_COND_T,
 	LOOP_T,
 	FUNC_T,
@@ -50,7 +48,8 @@ enum tokType{
 	CONST_T,
 	COND_T,
 	FUNC_CALL_T,
-	PARAM_T
+	PARAM_T,
+	CAST_T
 };
 
 enum storType{
@@ -84,8 +83,13 @@ public:
 	Node(tokType id, std::string val);
 	virtual ~Node();
 };
+
+class typeNode : public Node{
+public:
+	type_t type;
+};
 	
-class parserNode : public Node{
+class parserNode : public typeNode{
 public:
 	abstractNode* LHS;
 	abstractNode* OP;
@@ -94,14 +98,12 @@ public:
 	virtual ~parserNode();
 };
 
-class variableNode : public Node{
+class variableNode : public typeNode{
 public:
 	std::string namespacev;
 	storType storage;
 	signType sign;
 	lenType length;
-	
-	type_t type;
 
 	variableNode(tokType id, std::string val, type_t type, std::string namespacev);
 	void evaluateModifiers(const list_t modifiers);
@@ -125,9 +127,8 @@ public:
 	virtual ~condNode();
 };
 
-class castNode : public Node{
+class castNode : public typeNode{
 public:
-	type_t castType;
 	castNode(tokType id, type_t castType);
 };
 
@@ -139,16 +140,14 @@ public:
 	virtual ~functionNode();
 };
 
-class functionDecNode : public Node{
+class functionDecNode : public typeNode{
 public:
 	std::string namespacev;
 	storType storage;
 	signType sign;
 	lenType length;
-	
-	type_t type;
-
 	std::vector<struct_member> parameters;
+
 	functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters);
 };
 
