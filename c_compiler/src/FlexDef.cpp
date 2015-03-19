@@ -4,19 +4,18 @@
 #include <algorithm>
 
 
-Node::Node(tokType id, std::string val)
-	:id(id){
-	this -> node_type = "baseNode";
-	this -> val = val;
+Node::Node(tokType id, std::string val, int linenum)
+	:id(id),node_type("baseNode"),val(val), linenum(linenum){
 };
 
 Node::~Node(){};
 	
-parserNode::parserNode(tokType id, std::string val, abstractNode* LHS, abstractNode* OP, abstractNode* RHS)
+parserNode::parserNode(tokType id, std::string val, abstractNode* LHS, abstractNode* OP, abstractNode* RHS, int linenum)
 	:LHS(LHS),OP(OP),RHS(RHS){
 	Node::node_type = "parserNode";
 	Node::id = id;
 	Node::val = val;
+	Node::linenum = linenum;
 
 	typeNode::type = NULL;
 };
@@ -28,31 +27,37 @@ parserNode::~parserNode()
 	delete RHS;
 };
 
-variableNode::variableNode(tokType id, std::string val, type_t type, std::string namespacev)
-	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T), namespacev(namespacev)
+variableNode::variableNode(tokType id, std::string val, type_t type, std::string namespacev, int linenum)
+	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T)
 {
 	Node::node_type = "variableNode";
 	Node::id = id;
 	Node::val = val;
+	Node::linenum = linenum;
 
 	typeNode::type = type;
+	typeNode::namespacev = namespacev;
 };
 
-castNode::castNode(tokType id, type_t castType)
+castNode::castNode(tokType id, type_t castType, int linenum)
 {
 	Node::node_type = "castNode";
 	Node::id = id;
 	Node::val = NULL_S;
+	Node::linenum = linenum;
+
 
 	typeNode::type = castType;
+	typeNode::namespacev = type -> namespacev;
 };
 
-forNode::forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat)
+forNode::forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat, int linenum)
 	:initial(initial),condition(condition), repeat(repeat)
 {
 	Node::node_type = "forNode";
 	Node::id = id;
 	Node::val = val;
+	Node::linenum = linenum;
 }
 
 forNode::~forNode()
@@ -62,12 +67,14 @@ forNode::~forNode()
 	delete repeat;
 }
 
-condNode::condNode(tokType id, std::string val, abstractNode* condition, abstractNode* cond_true, abstractNode* cond_false)
+condNode::condNode(tokType id, std::string val, abstractNode* condition, abstractNode* cond_true, abstractNode* cond_false, int linenum)
 	:condition(condition), cond_true(cond_true),cond_false(cond_false)
 {
 	Node::node_type = "condNode";
 	Node::id = id;
 	Node::val = val;
+	Node::linenum = linenum;
+
 }
 
 condNode::~condNode()
@@ -77,13 +84,14 @@ condNode::~condNode()
 	delete cond_false;
 }
 
-functionNode::functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code)
-	:code(code)
+functionNode::functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code, int linenum)
+	:code(code),def(functionDef)
 {
 	Node::node_type = "functionNode";
 	Node::id = id;
 	Node::val = val;
-	def = functionDef;
+	Node::linenum = linenum;
+
 }
 
 functionNode::~functionNode()
@@ -92,25 +100,28 @@ functionNode::~functionNode()
 	delete def;
 }
 
-functionDecNode::functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters)
+functionDecNode::functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters, int linenum)
 	:parameters(parameters)
 {
 	Node::id = id;
 	Node::node_type = "functionDecNode";
 	Node::val = variableDef -> val;
+	Node::linenum = linenum;
 	storage = variableDef -> storage;
 	sign = variableDef -> sign;
 	length = variableDef -> length;
 	
 	typeNode::type = variableDef -> type;
+	typeNode::namespacev = variableDef -> namespacev;
 }
 
-functionCallNode::functionCallNode(tokType id, std::string val, abstractNode* parameters)
+functionCallNode::functionCallNode(tokType id, std::string val, abstractNode* parameters, int linenum)
 	:parameters(parameters)
 {
 	Node::id = id;
 	Node::node_type = "functionCallNode";
 	Node::val = val;
+	Node::linenum = linenum;
 }
 
 functionCallNode::~functionCallNode()

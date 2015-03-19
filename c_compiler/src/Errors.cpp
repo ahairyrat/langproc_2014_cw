@@ -2,9 +2,7 @@
 
 std::string infileName;
 
-int linenum = 1;
-
-void printError(const char* error_message, bool end) {
+void printError(const char* error_message, bool end, int linenum) {
 	if(!end)
 	{
 		std::cerr << infileName << '(' << linenum << ") " << "Error: " << error_message
@@ -29,7 +27,7 @@ void printError(const char* error_message, bool end) {
 		std::cerr << infileName << ' ' << "Error: " << error_message << std::endl;
 }
 
-void printWarning(const char* error_message, bool end) {
+void printWarning(const char* error_message, bool end,int linenum) {
 	if(!end)
 	{
 		std::cout << infileName << '(' << linenum << ") " << "Warning: " << error_message

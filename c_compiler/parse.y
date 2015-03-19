@@ -23,6 +23,8 @@
 	
 	bool error = true;
 
+	int linenum = 1;
+
 %}
 
 %union{
@@ -104,7 +106,7 @@ variable_dec_single:
 		type id_or_array				{ 
 								  $$ = NULL;
 								  if($1 != NULL)	
-									$$ = new variableNode(VAR_T, $2, $1, "type");
+									$$ = new variableNode(VAR_T, $2, $1, "type", linenum);
 								  else
 									yyerror("Is not a type");
 								}//int x
@@ -116,7 +118,7 @@ variable_dec_stype:
 								$$ = NULL;
 								 if($1 != NULL)
 									for( i = $2->begin(); i != $2->end(); i++)
-									    	$$ = new parserNode(NULL_T,NULL_S,$$,NULL,new variableNode(VAR_T, *i, $1, $1 -> namespacev));		
+									    	$$ = new parserNode(NULL_T,NULL_S,$$,NULL,new variableNode(VAR_T, *i, $1, $1 -> namespacev, linenum), linenum);		
 								 else
 									yyerror("Is not a type");
 								}//int x, y, z
@@ -128,7 +130,7 @@ variable_dec	:
 		;
 
 id_list		:						 //unbounded list of comma seperate identifiers
-		id_list COMMA id_or_array				{$$ = $1; $$ -> insert($$ -> end(), *(new std::string($3)));}
+		id_list COMMA id_or_array			{$$ = $1; $$ -> insert($$ -> end(), *(new std::string($3)));}
 		| id_or_array COMMA id_or_array			{$$ = new std::list<std::string>;
 									$$ -> insert($$ -> end(), *(new std::string($1)));
 									$$ -> insert($$ -> end(), *(new std::string($3)));
@@ -179,7 +181,7 @@ data_structure	:
 
 non_pointer_basic_type :
 		basic_type					{$$ = $1}	//int
-		| modifier_list basic_type modifier_list 	{$$ = $2;
+/*		| modifier_list basic_type modifier_list 	{$$ = $2;
 									$1 -> splice($1 -> end(), *$3);
 									yyerror("Not implemented yet");
 									//evaluate modifiers
@@ -195,7 +197,7 @@ non_pointer_basic_type :
 		| modifier_list					{$$ = getType("int", "type");
 									yyerror("Not implemented yet");
 									//Evaluate modifiers
-								}	//unsigned
+								}	//unsigned*/
 		;
 
 id		:
@@ -258,19 +260,19 @@ struct 		:
 		;
 
 function_def 	:
-		function_dec bracketed_statement_list		{$$ = new functionNode(FUNC_T, NULL_S, $1, $2);}
+		function_dec bracketed_statement_list		{$$ = new functionNode(FUNC_T, NULL_S, $1, $2, linenum);}
 		;
 
 function_dec	:
-		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET	{$$ = new functionDecNode(FUNC_DEF_T, (variableNode*)((Node*)$1), build_struct_members($3));
+		variable_dec_single OPEN_BRACKET parameter_list CLOSE_BRACKET	{$$ = new functionDecNode(FUNC_DEF_T, (variableNode*)((Node*)$1), build_struct_members($3), linenum);
 										 delete $1;}
-		| variable_dec_single OPEN_BRACKET CLOSE_BRACKET		{$$ = new functionDecNode(FUNC_DEF_T, (variableNode*)((Node*)$1), *(new std::vector<struct_member>()));
+		| variable_dec_single OPEN_BRACKET CLOSE_BRACKET		{$$ = new functionDecNode(FUNC_DEF_T, (variableNode*)((Node*)$1), *(new std::vector<struct_member>()), linenum);
 										 delete $1;}
 		;
 
 function_call 	:
-		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{$$ = new functionCallNode(FUNC_CALL_T, $1, $3);}
-		| id OPEN_BRACKET CLOSE_BRACKET				{$$ = new functionCallNode(FUNC_CALL_T, $1, NULL);}
+		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{$$ = new functionCallNode(FUNC_CALL_T, $1, $3, linenum);}
+		| id OPEN_BRACKET CLOSE_BRACKET				{$$ = new functionCallNode(FUNC_CALL_T, $1, NULL, linenum);}
 		;
 
 modifier 	:
@@ -293,8 +295,8 @@ modified_struct :
 		;
 
 number 		:
-		INT						{$$ = new variableNode(CONST_T, $1, getType("int", "type"), "const")}	//01234, 0x134, 0b1111
-		| FLOAT						{$$ = new variableNode(CONST_T, $1, getType("float", "type"), "const")}	//0213.21414
+		INT						{$$ = new variableNode(CONST_T, $1, getType("int", "type"), "const", linenum)}	//01234, 0x134, 0b1111
+		| FLOAT						{$$ = new variableNode(CONST_T, $1, getType("float", "type"), "const", linenum)}	//0213.21414
 		;
 
 parameter_list 	:				//unbounded list of variable declerations
@@ -317,7 +319,7 @@ parameter_list 	:				//unbounded list of variable declerations
 program_block	:
 		variable_dec EOS				{$$ = $1;}
 		| def_expr					{$$ = NULL}
-		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(ASSIGN_T, NULL_S, $1, new Node(ASSIGN_T, $2), $3);}
+		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(ASSIGN_T, NULL_S, $1, new Node(ASSIGN_T, $2, linenum), $3, linenum);}
 		| bracketed_statement_list			{$$ = $1}
 		| typedef EOS					{$$ = NULL}
 		| function_def					{$$ = $1}
@@ -326,7 +328,7 @@ program_block	:
 		;
 
 program		:
-		program program_block				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL, $2);}
+		program program_block				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);}
 		| program_block					{$$ = $1}
 		;
 
@@ -409,37 +411,37 @@ modified_union	:
 		;
 
 compound_assign	:
-		NOT_EQUALS					{$$ = new Node(LOGICOP_T, $1)}	//!=		
+		NOT_EQUALS					{$$ = new Node(LOGICOP_T, $1, linenum)}	//!=		
 		| arithmetic_op EQUALS				{$$ = $1}	//+= -= *= /=
 		| bitwise_op EQUALS				{$$ = $1}	//^= <<= >>= etc.
 		;
 
 logic_op	:
-		NOT						{$$ = new Node(LOGICOP_T, $1)}	//!
-		| GREATER_THAN					{$$ = new Node(LOGICOP_T, $1)}	//>
-		| GREATER_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1)}	//>=
-		| LESS_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1)}	//<=
-		| LESS_THAN					{$$ = new Node(LOGICOP_T, $1)}	//<
-		| LOGICAL_AND					{$$ = new Node(LOGICOP_T, $1)}	//&&
-		| LOGICAL_EQUALS				{$$ = new Node(LOGICOP_T, $1)}	//==
-		| LOGICAL_OR					{$$ = new Node(LOGICOP_T, $1)}	//||
+		NOT						{$$ = new Node(LOGICOP_T, $1, linenum)}	//!
+		| GREATER_THAN					{$$ = new Node(LOGICOP_T, $1, linenum)}	//>
+		| GREATER_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1, linenum)}	//>=
+		| LESS_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1, linenum)}	//<=
+		| LESS_THAN					{$$ = new Node(LOGICOP_T, $1, linenum)}	//<
+		| LOGICAL_AND					{$$ = new Node(LOGICOP_T, $1, linenum)}	//&&
+		| LOGICAL_EQUALS				{$$ = new Node(LOGICOP_T, $1, linenum)}	//==
+		| LOGICAL_OR					{$$ = new Node(LOGICOP_T, $1, linenum)}	//||
 		;
 
 bitwise_op	:
-		ADDRESS_OR_BITWISE_AND				{$$ = new Node(BITOP_T, $1)}	//&
-		| BITWISE_INVERSE				{$$ = new Node(BITOP_T, $1)}	//~
-		| BITWISE_LEFT					{$$ = new Node(BITOP_T, $1)}	//<<
-		| BITWISE_OR					{$$ = new Node(BITOP_T, $1)}	//|
-		| BITWISE_RIGHT					{$$ = new Node(BITOP_T, $1)}	//>>
-		| BITWISE_XOR					{$$ = new Node(LOGICOP_T, $1)}	//^
+		ADDRESS_OR_BITWISE_AND				{$$ = new Node(BITOP_T, $1, linenum)}	//&
+		| BITWISE_INVERSE				{$$ = new Node(BITOP_T, $1, linenum)}	//~
+		| BITWISE_LEFT					{$$ = new Node(BITOP_T, $1, linenum)}	//<<
+		| BITWISE_OR					{$$ = new Node(BITOP_T, $1, linenum)}	//|
+		| BITWISE_RIGHT					{$$ = new Node(BITOP_T, $1, linenum)}	//>>
+		| BITWISE_XOR					{$$ = new Node(LOGICOP_T, $1, linenum)}	//^
 		;
 
 qualifier_list	:
-		qualifier qualifier				{}	//const volatile
+		qualifier qualifier				{yyerror("Not implemented yet"); exit(1);}	//const volatile
 		;
 
 type_cast	:						//(const unsigned int**const*)
-		OPEN_BRACKET type CLOSE_BRACKET			{$$ = new castNode(TYPE_T, $2);}
+		OPEN_BRACKET type CLOSE_BRACKET			{$$ = new castNode(TYPE_T, $2, linenum);}
 		;
 
 unknown		:
@@ -455,24 +457,24 @@ unknown		:
 		;
 
 arithmetic_op	:
-		ARITHMETIC					{$$ = new Node(ARROP_T, $1)}
-		| INVERSE					{$$ = new Node(ARROP_T, $1)}
-		| MULT_OR_POINTER				{$$ = new Node(ARROP_T, $1)}
+		ARITHMETIC					{$$ = new Node(ARROP_T, $1, linenum)}
+		| INVERSE					{$$ = new Node(ARROP_T, $1, linenum)}
+		| MULT_OR_POINTER				{$$ = new Node(ARROP_T, $1, linenum)}
 		;
 
 if_cond		:
-		IF OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(IF_COND_T, NULL_S, $3, NULL, NULL);}
+		IF OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(IF_COND_T, NULL_S, $3, NULL, NULL, linenum);}
 		;
 
 while_cond	:
-		WHILE OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(WHILE_COND_T, NULL_S, $3, NULL, NULL);}
+		WHILE OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(WHILE_COND_T, NULL_S, $3, NULL, NULL, linenum);}
 		;
 
 while_statement	:
-		while_cond bracketed_statement_list		{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}			//while(true){...} 
-		| while_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}			//while(true)...
-		| DO bracketed_statement_list while_cond EOS	{$$ = new parserNode(NULL_T, NULL_S, $2, NULL, new parserNode(LOOP_T, NULL_S, $3, NULL, $2));}			//do{...}while(true);
-		| DO statement while_cond EOS			{$$ = new parserNode(NULL_T, NULL_S, $2, NULL, new parserNode(LOOP_T, NULL_S, $3, NULL, $2));}			//do...while(true)
+		while_cond bracketed_statement_list		{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2, linenum);}			//while(true){...} 
+		| while_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2, linenum);}			//while(true)...
+		| DO bracketed_statement_list while_cond EOS	{$$ = new parserNode(NULL_T, NULL_S, $2, NULL, new parserNode(LOOP_T, NULL_S, $3, NULL, $2, linenum), linenum);}			//do{...}while(true);
+		| DO statement while_cond EOS			{$$ = new parserNode(NULL_T, NULL_S, $2, NULL, new parserNode(LOOP_T, NULL_S, $3, NULL, $2, linenum), linenum);}			//do...while(true)
 		;
 
 bracketed_statement_list :
@@ -483,13 +485,13 @@ bracketed_statement_list :
 		;
 
 statement_list	:
-		statement_list statement			{$$ = new parserNode(NULL_T, NULL_S, $1, NULL,$2); }
+		statement_list statement			{$$ = new parserNode(NULL_T, NULL_S, $1, NULL,$2, linenum); }
 		| statement					{$$ = $1}
 		;
 
 if_main		:
-		if_cond bracketed_statement_list		{$$ = new condNode(COND_T, NULL_S, $1, $2, NULL);}
-		| if_cond statement				{$$ = new condNode(COND_T, NULL_S, $1, $2, NULL);}
+		if_cond bracketed_statement_list		{$$ = new condNode(COND_T, NULL_S, $1, $2, NULL, linenum);}
+		| if_cond statement				{$$ = new condNode(COND_T, NULL_S, $1, $2, NULL, linenum);}
 		;
 
 if_statement		:
@@ -503,22 +505,22 @@ else		:
 		;
 
 switch_cond	:
-		SWITCH OPEN_BRACKET expr CLOSE_BRACKET		{}
+		SWITCH OPEN_BRACKET expr CLOSE_BRACKET		{yyerror("Not implemented yet"); exit(1);}
 		;
 
 switch_statement	:
 		switch_cond OPEN_CURLY_BRACKET case_list CLOSE_CURLY_BRACKET
-								{}
+								{yyerror("Not implemented yet"); exit(1);}
 		;
 
 case_stat	:
-		CASE unary_expr COLON statement_list		{}
-		| CASE unary_expr COLON bracketed_statement_list{}
+		CASE unary_expr COLON statement_list		{yyerror("Not implemented yet"); exit(1);}
+		| CASE unary_expr COLON bracketed_statement_list{yyerror("Not implemented yet"); exit(1);}
 		;
 
 case_list 	:
-		case_stat case_list				{}
-		| case_stat					{}
+		case_stat case_list				{yyerror("Not implemented yet"); exit(1);}
+		| case_stat					{yyerror("Not implemented yet"); exit(1);}
 		;
 
 statement	:
@@ -535,7 +537,7 @@ cond_statement	:
 		;
 		
 expr		:
-		| rexpr						{$$ = $1;}
+		rexpr						{$$ = $1;}
 		| variable_dec					{$$ = $1;}
 		;
 
@@ -553,44 +555,44 @@ rexpr 		:
 
 const_expr	:
 		number						{$$ = $1;}
-		| id_or_array					{$$ = new variableNode(VAR_T, $1, NULL, "unknown");}
-		| address_id					{$$ = new variableNode(VAR_T, $1, NULL, "unknown");}
-		| CHAR						{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);	$$ = new variableNode(CONST_T, tmp, getType("char", "type"), "const");}
-		| STRING					{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);  $$ = new variableNode(CONST_T, tmp, getPointer("char*"), "const");}
+		| id_or_array					{$$ = new variableNode(VAR_T, $1, NULL, "unknown", linenum);}
+		| address_id					{$$ = new variableNode(VAR_T, $1, NULL, "unknown", linenum);}
+		| CHAR						{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);	$$ = new variableNode(CONST_T, tmp, getType("char", "type"), "const", linenum);}
+		| STRING					{std::string tmp = $1; tmp.erase(0,1);tmp.erase(tmp.size()-1);  $$ = new variableNode(CONST_T, tmp, getPointer("char*"), "const", linenum);}
 		;
 
 unary_expr	:
 		const_expr					{$$ = $1;}
-		| INCREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
-		| DECREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
-		| INVERSE unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, new Node(CONST_T, "0"), new Node(UNOP_T, "-"), $2);}
-		| unary_expr INCREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "+"), new Node(CONST_T, "1")));}
-		| unary_expr DECREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "-"), new Node(CONST_T, "1")));}
-		| type_cast unary_expr				{$$ = new parserNode(CAST_T, NULL_S, NULL, $1, $2);}
+		| INCREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "+", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
+		| DECREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "-", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
+		| INVERSE unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, new Node(CONST_T, "0", linenum), new Node(UNOP_T, "-", linenum), $2, linenum);}
+		| unary_expr INCREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "+", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
+		| unary_expr DECREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "-", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
+		| type_cast unary_expr				{$$ = new parserNode(CAST_T, NULL_S, NULL, $1, $2, linenum);}
 		| OPEN_BRACKET expr CLOSE_BRACKET		{$$ = $2}
-		| function_call					{}
+		| function_call					{$$ = $1;}
 		;				
 
 binary_expr	:
-		lexpr arithmetic_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
-		| rexpr arithmetic_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
-		| lexpr logic_op rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
-		| lexpr bitwise_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3);}
+		lexpr arithmetic_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3, linenum);}
+		| rexpr arithmetic_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3, linenum);}
+		| lexpr logic_op rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3, linenum);}
+		| lexpr bitwise_op rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, $2, $3, linenum);}
 		;
 
 assign_expr	:
-		lexpr EQUALS rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,$2), $3);}
-		| lexpr compound_assign rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"="), new parserNode(EXPR_T,NULL_S, $1, $2, $3));}
+		lexpr EQUALS rexpr				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,$2, linenum), $3, linenum);}
+		| lexpr compound_assign rexpr			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, $2, $3, linenum), linenum);}
 		;
 
 for_cond	:
 		FOR OPEN_BRACKET expr EOS expr EOS expr CLOSE_BRACKET
-								{$$ = new forNode(FOR_COND_T, $1, $3, $5, $7);}
+								{$$ = new forNode(FOR_COND_T, $1, $3, $5, $7, linenum);}
 		;
 
 for_statement	:
-		for_cond bracketed_statement_list		{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
-		| for_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2);}
+		for_cond bracketed_statement_list		{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2, linenum);}
+		| for_cond statement				{$$ = new parserNode(LOOP_T, NULL_S, $1, NULL, $2, linenum);}
 		;
 
 struct_def_param_list:
@@ -678,8 +680,8 @@ def_expr	:
 		;
 
 return		:
-		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1), $2)}
-		| RETURN					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1), NULL)}
+		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1, linenum), $2, linenum)}
+		| RETURN					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1, linenum), NULL, linenum)}
 		;
 
 array		:
@@ -698,7 +700,7 @@ array		:
 		;
 
 parameter_send_list:
-		expr COMMA parameter_send_list			{$$ = new parserNode(PARAM_T, NULL_S, $1, NULL, $3)}
+		expr COMMA parameter_send_list			{$$ = new parserNode(PARAM_T, NULL_S, $1, NULL, $3, linenum)}
 		| expr						{$$ = $1}
 		;
 
@@ -723,7 +725,7 @@ struct_member 	:
 
 void yyerror (char const *s)
 {	
-	printError(s, false);
+	printError(s, false, linenum);
 	error = false;
 }
 

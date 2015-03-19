@@ -1,6 +1,8 @@
 #include "../includes/FlexDef.h"
 #include "../includes/Errors.h"
 #include <iostream>
+#include <list>
+#include <map>
 
 abstractNode* root = NULL;
 
@@ -10,7 +12,13 @@ std::list<type_s> pointers;
 
 void printTree(abstractNode* node);
 
-bool analyseTypeTree(abstractNode* node);
+bool analyseTree();
+
+bool analyseVariables(abstractNode* node, std::list<std::map<std::string, type_t> >&scopeList);
+
+bool analyseTypes(abstractNode* node);
+
+type_t getScopeVariable(std::string name, std::list<std::map<std::string, type_t> > &scopeList);
 
 int main() {
 	std::string filename;
@@ -24,12 +32,12 @@ int main() {
 	std::cout << "Please enter filename to be compiled" << std::endl;
 	std::cin >> filename;
 	if (!parse(filename))
-		printError("Error parsing file", true);
-	else if (analyseTypeTree(root)) {
+		printError("Error parsing file", true, 0);
+	else if (analyseTree()) {
 		printTree(root);
 		std::cout << std::endl;
 	} else
-		printError("Error analysing code", true);
+		printError("Error analysing code", true, 0);
 	return 0;
 }
 
@@ -89,19 +97,88 @@ void printTree(abstractNode* node) {
 	}
 }
 
-bool analyseTypeTree(abstractNode* node) {
-	std::cout << "Started analysis" << std::endl;
+bool analyseTree() {
+	std::list<std::map<std::string, type_t> > scopeList;
+	//Insert global scope
+	scopeList.insert(scopeList.begin(), *(new std::map<std::string, type_t>));
+	if (analyseVariables(root, scopeList))	//Analyses
+		if (analyseTypes(root))
+			return true;
+	//Delete global scope
+	scopeList.erase(scopeList.begin());
+	return false;
+	
+}
+
+bool analyseVariables(abstractNode* node, std::list<std::map<std::string, type_t> > &scopeList) {
+	//A variable is in scope in its current branch starting from itself and the node left of it 
+	//				root
+	//			/		\
+	//		int a		+			a is in scope, b is not
+	//				/		\
+	//				a		b
+	
+	//Each declared varaible -> add to map for scope
+	//If found change type
+	//delete map once scope left
+	std::cout << "Started variable analysis" << std::endl;
+	Node* currNode = (Node*)node;
+	if (currNode->node_type == "parserNode") {
+		std::cout << "Found branching node" << std::endl;
+		parserNode* currNodeEx = (parserNode*)currNode;
+		//Push current scope onto the top of the stack
+		scopeList.insert(scopeList.begin(), *(new std::map<std::string, type_t>));
+		if (currNodeEx->LHS)
+			if (!analyseVariables(currNodeEx->LHS, scopeList))
+				return false;
+		std::cout << "Analysed LHS" << std::endl;
+		if (currNodeEx->RHS)
+			if (!analyseVariables(currNodeEx->RHS, scopeList))
+				return false;
+		std::cout << "Analysed RHS" << std::endl;
+		//Delete current scope from the stack
+		scopeList.erase(scopeList.begin());
+		return true;
+	} else if (currNode->node_type == "variableNode") {
+		if(((typeNode*)currNode)-> namespacev == "unknown")
+		{
+			std::cout << "Found undeclred variable" << std::endl;
+			if(getScopeVariable(currNode -> val, scopeList)){
+				std::cout << "Variable has been declared" << std::endl;
+				((typeNode*)currNode)-> type = getScopeVariable(currNode -> val, scopeList);
+				((typeNode*)currNode)-> namespacev = ((typeNode*)currNode)-> type -> namespacev;
+
+				return true;
+			}
+			else {
+					printError("Undeclared variable",false, currNode -> linenum);
+					return false;
+			}
+		}
+		else
+		{
+			std::cout << "Found declared variable" << std::endl;
+			(*scopeList.begin()).insert(std::pair<std::string,type_t>(currNode -> val,((typeNode*)currNode)-> type));
+			return true;
+		}
+	} 
+						
+}
+
+//Add return types for functions
+bool analyseTypes(abstractNode* node) {
+	std::cout << "Started type analysis" << std::endl;
 	Node* currNode = (Node*) node;
 	if (currNode->node_type == "parserNode"
 			&& (currNode->id == EXPR_T || currNode->id == ASSIGN_T)) {
 		std::cout << "Found expr or assign" << std::endl;
 		parserNode* currNodeEx = (parserNode*) currNode;
 		if (currNodeEx->LHS)
-			if (!analyseTypeTree(currNodeEx->LHS))
+			if (!analyseTypes(currNodeEx->LHS))
 				return false;
 		std::cout << "Analysed LHS" << std::endl;
 		if (currNodeEx->RHS)
-			if (!analyseTypeTree(currNodeEx->RHS))
+			if (!analyseTypes(currNodeEx->RHS))
 				return false;
 		std::cout << "Analysed RHS" << std::endl;
 		if (currNodeEx->LHS && currNodeEx->RHS) {
@@ -122,17 +199,18 @@ bool analyseTypeTree(abstractNode* node) {
 											== getType("float", "type"))
 											|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
 													== getType("double", "type")))
-													&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-															== getType("int", "type"))
-															|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-																	== getType("float", "type"))
-																	|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-																			== getType("double", "type")))) {
+					&& (
+							(((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== getType("int", "type"))
+									|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+											== getType("float", "type"))
+											|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+													== getType("double", "type")))) {
 				parserNode* temp =
 						new parserNode(CAST_T, NULL_S, NULL,
 								new castNode(TYPE_T,
-										((typeNode*) ((Node*) (currNodeEx->LHS)))->type),
-										currNodeEx->RHS);
+										((typeNode*) ((Node*) (currNodeEx->LHS)))->type, currNode -> linenum),
+										currNodeEx->RHS, currNode -> linenum);
 				currNodeEx->RHS = temp;
 			} else if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type //If the type of the LHS expression is not NULL
 					&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
@@ -147,17 +225,13 @@ bool analyseTypeTree(abstractNode* node) {
 				parserNode* temp =
 						new parserNode(CAST_T, NULL_S, NULL,
 								new castNode(TYPE_T,
-										((typeNode*) ((Node*) (currNodeEx->LHS)))->type),
-										currNodeEx->RHS);
+										((typeNode*) ((Node*) (currNodeEx->LHS)))->type, currNode -> linenum),
+										currNodeEx->RHS, currNode -> linenum);
 				currNodeEx->RHS = temp;
 			}
 
 			else {
-				std::cout << "Trying to use "
-						<< ((typeNode*) ((Node*) (currNodeEx->LHS)))->type->name
-						<< " and "
-						<< ((typeNode*) ((Node*) (currNodeEx->RHS)))->type->name
-						<< " in the same expression" << std::endl;
+				printError("Invalid type conversion", false, currNode -> linenum);
 				return false;
 			}
 			std::cout << "Both types are equal" << std::endl;
@@ -168,18 +242,14 @@ bool analyseTypeTree(abstractNode* node) {
 						((typeNode*) ((Node*) (currNodeEx->LHS)))->type;
 			else
 				return false;
-			std::cout << "RHS is empty so type is LHS type" << std::endl;
 		} else if (currNodeEx->RHS) {
-			std::cout << "Unary RHS expression" << std::endl;
 			if (((parserNode*) ((Node*) (currNodeEx->RHS)))->type)
 				currNodeEx->type =
 						((parserNode*) ((Node*) (currNodeEx->RHS)))->type;
 			else
 				return false;
-			std::cout << "LHS is empty so type is RHS type" << std::endl;
 		} else {
-			std::cout << "Trying to assign or calculate items with no types"
-					<< std::endl;
+			printError("Invalid type conversion",false, currNode -> linenum);
 			return false;
 		}
 	} else if (currNode->node_type == "parserNode" && currNode->id == CAST_T) {
@@ -187,6 +257,15 @@ bool analyseTypeTree(abstractNode* node) {
 		parserNode* currNodeEx = (parserNode*) currNode;
 		currNodeEx->type = ((castNode*) ((Node*) (currNodeEx->OP)))->type;
 
+	} else if (currNode->node_type == "parserNode") {//Base case for parserNode is to check values below
+		std::cout << "Found statement list" << std::endl;
+		parserNode* currNodeEx = (parserNode*) currNode;
+		if (currNodeEx->LHS)
+			if (!analyseTypes(currNodeEx->LHS))
+				return false;
+		if (currNodeEx->RHS)
+			if (!analyseTypes(currNodeEx->RHS))
+				return false;
 	} else if (currNode->node_type == "variableNode") {
 		std::cout << "Variable expression" << std::endl;
 	} else if (currNode->node_type == "functionNode") {
@@ -199,4 +278,24 @@ bool analyseTypeTree(abstractNode* node) {
 
 	}
 	return true;
+}
+
+type_t getScopeVariable(std::string name, std::list<std::map<std::string, type_t> > &scopeList)
+{
+	std::list<std::map<std::string, type_t> >::iterator st;
+	std::map<std::string, type_t>::iterator it;
+	std::map<std::string, type_t> scope;
+	//Search through current and all parent scopes
+	for(st = scopeList.begin();st != scopeList.end(); st++)
+	{
+		scope = *st;
+		it = scope.find(name);
+		if(it != scope.end())
+		{
+			//The element has been found
+			std::cout << "Found variable decleration" << std::endl;
+			return it->second;
+		}
+	}
+	return NULL;
 }

@@ -8,8 +8,8 @@
 
 extern std::string infileName;
 
-void printError(const char* error_message, bool end);
+void printError(const char* error_message, bool end, int linenum);
 
-void printWarning(const char* error_message, bool end);
+void printWarning(const char* error_message, bool end, int linenum);
 
 void printFileMissing();

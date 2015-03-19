@@ -79,14 +79,16 @@ public:
 	std::string node_type;
 	tokType id;
 	std::string val;
+	int linenum;
 	Node(){};
-	Node(tokType id, std::string val);
+	Node(tokType id, std::string val, int linenum);
 	virtual ~Node();
 };
 
 class typeNode : public Node{
 public:
 	type_t type;
+	std::string namespacev;
 };
 	
 class parserNode : public typeNode{
@@ -94,18 +96,17 @@ public:
 	abstractNode* LHS;
 	abstractNode* OP;
 	abstractNode* RHS;
-	parserNode(tokType id, std::string val, abstractNode* LHS, abstractNode* OP, abstractNode* RHS);
+	parserNode(tokType id, std::string val, abstractNode* LHS, abstractNode* OP, abstractNode* RHS, int linenum);
 	virtual ~parserNode();
 };
 
 class variableNode : public typeNode{
 public:
-	std::string namespacev;
 	storType storage;
 	signType sign;
 	lenType length;
 
-	variableNode(tokType id, std::string val, type_t type, std::string namespacev);
+	variableNode(tokType id, std::string val, type_t type, std::string namespacev, int linenum);
 	void evaluateModifiers(const list_t modifiers);
 };
 
@@ -114,7 +115,7 @@ public:
 	abstractNode* initial;
 	abstractNode* condition;
 	abstractNode* repeat;
-	forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat);
+	forNode(tokType id, std::string val, abstractNode* initial, abstractNode* condition, abstractNode* repeat, int linenum);
 	virtual ~forNode();
 };
 
@@ -123,39 +124,38 @@ public:
 	abstractNode* condition;
 	abstractNode* cond_true;
 	abstractNode* cond_false;
-	condNode(tokType id, std::string val, abstractNode* condition, 	abstractNode* cond_true, abstractNode* cond_false);
+	condNode(tokType id, std::string val, abstractNode* condition, 	abstractNode* cond_true, abstractNode* cond_false, int linenum);
 	virtual ~condNode();
 };
 
 class castNode : public typeNode{
 public:
-	castNode(tokType id, type_t castType);
+	castNode(tokType id, type_t castType, int linenum);
 };
 
 class functionNode : public Node{
 public:
 	abstractNode* code;
 	abstractNode* def;
-	functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code);
+	functionNode(tokType id, std::string val, abstractNode* functionDef, abstractNode* code, int linenum);
 	virtual ~functionNode();
 };
 
 class functionDecNode : public typeNode{
 public:
-	std::string namespacev;
+
 	storType storage;
 	signType sign;
 	lenType length;
 	std::vector<struct_member> parameters;
 
-	functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters);
+	functionDecNode(tokType id, variableNode* variableDef, std::vector<struct_member> parameters, int linenum);
 };
 
 class functionCallNode : public Node{
 public:
 	abstractNode* parameters;
-
-	functionCallNode(tokType id, std::string val, abstractNode* parameters);
+	functionCallNode(tokType id, std::string val, abstractNode* parameters, int linenum);
 	virtual ~functionCallNode();
 };
 
