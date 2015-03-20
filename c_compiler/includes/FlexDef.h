@@ -8,9 +8,11 @@
 
 #define NULL_S ""
 
+class abstractNode{};
+
 struct type_s;
 
-struct struct_member{std::string id; type_s* type; int value;};
+struct struct_member{std::string id; type_s* type; abstractNode* size; int value;};
 
 struct type_s{
 	std::string namespacev;
@@ -18,8 +20,6 @@ struct type_s{
 	type_s* base;
 	std::vector<struct_member> members;
 };
-
-class abstractNode{};
 
 typedef type_s* type_t;
 typedef std::list<std::string>* list_t;
@@ -89,6 +89,7 @@ public:
 class typeNode : public Node{
 public:
 	type_t type;
+	type_t actualType;
 	std::string namespacev;
 };
 	
@@ -107,7 +108,10 @@ public:
 	signType sign;
 	lenType length;
 
+	abstractNode* size;
+
 	variableNode(tokType id, std::string val, type_t type, std::string namespacev, int linenum);
+	~variableNode();
 	void evaluateModifiers(const list_t modifiers);
 };
 

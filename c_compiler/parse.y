@@ -147,7 +147,7 @@ id_or_array	:
 									 				//VariableNames that start with a [x] are considered arrays of that size x (x can be a number or variable)
 								}
 		| id						{$$ = $1;}
-		| struct_member					{$$ = $1;}				//VariableNames that start with .x. are struct members, *x* are pointer members
+		| struct_member					{$$ = $1;}				//VariableNames that start with .x. are struct members, -x- are pointer members
 		;
 
 type 		:
@@ -299,7 +299,7 @@ modified_struct :
 
 number 		:
 		INT						{$$ = new variableNode(CONST_T, $1, getType("int", "type"), "const", linenum)}	//01234, 0x134, 0b1111
-		| FLOAT						{$$ = new variableNode(CONST_T, $1, getType("float", "type"), "const", linenum)}	//0213.21414
+		| FLOAT						{$$ = new variableNode(CONST_T, $1, getType("float", "type"), "const",linenum)}	//0213.21414
 		;
 
 parameter_list 	:				//unbounded list of variable declerations
@@ -308,6 +308,7 @@ parameter_list 	:				//unbounded list of variable declerations
 								 struct_member newMember;
 								 newMember.id = variable -> val;
 								 newMember.type = variable -> type;
+ 								 newMember.size = variable -> size;
 								 $$ -> insert($$ -> end(), newMember);
 								 delete variable;}
 		| variable_dec_single			        {$$ = new std::list<struct_member>();
@@ -315,6 +316,7 @@ parameter_list 	:				//unbounded list of variable declerations
 								 struct_member newMember;
 								 newMember.id = variable -> val;
 								 newMember.type = variable -> type;
+								 newMember.size = variable -> size;
 								 $$ -> insert($$ -> end(), newMember);
 								 delete variable;}
 		;
@@ -606,6 +608,7 @@ struct_def_param_list:
 								 struct_member newMember;
 								 newMember.id = variable -> val;
 								 newMember.type = variable -> type;
+ 								 newMember.size = variable -> size;
 								 $$ -> insert($$ -> end(), newMember);
 								 delete variable;
 								}		//int x; int y; char z ...
@@ -615,6 +618,7 @@ struct_def_param_list:
 								 struct_member newMember;
 								 newMember.id = variable -> val;
 								 newMember.type = variable -> type;
+								 newMember.size = variable -> size;
 								 $$ -> insert($$ -> end(), newMember);
 								 delete variable;
 								}		//int x; int y; char z ...
@@ -715,9 +719,9 @@ struct_member 	:
 								ss << $1;
 								$$ = strdup(ss.str().c_str());}
 		| id POINTER_MEMBER id				{std::stringstream ss;
-								ss << '*';
+								ss << '-';
 								ss << $3;
-								ss << '*';
+								ss << '-';
 								ss << $1;
 								$$ = strdup(ss.str().c_str());}
 		;

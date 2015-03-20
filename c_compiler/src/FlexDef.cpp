@@ -18,6 +18,7 @@ parserNode::parserNode(tokType id, std::string val, abstractNode* LHS, abstractN
 	Node::linenum = linenum;
 
 	typeNode::type = NULL;
+	typeNode::actualType = NULL;
 };
 
 parserNode::~parserNode()
@@ -28,17 +29,22 @@ parserNode::~parserNode()
 };
 
 variableNode::variableNode(tokType id, std::string val, type_t type, std::string namespacev, int linenum)
-	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T)
+	:storage(NULLS_T),length(NULLL_T),sign(NULLI_T),size(NULL)
 {
 	Node::node_type = "variableNode";
 	Node::id = id;
 	Node::val = val;
 	Node::linenum = linenum;
 
+	typeNode::actualType = type;
 	typeNode::type = type;
 	typeNode::namespacev = namespacev;
 };
 
+variableNode::~variableNode()
+{
+	delete size;
+}
 castNode::castNode(tokType id, type_t castType, int linenum)
 {
 	Node::node_type = "castNode";
@@ -47,6 +53,7 @@ castNode::castNode(tokType id, type_t castType, int linenum)
 	Node::linenum = linenum;
 
 
+	typeNode::actualType = castType;
 	typeNode::type = castType;
 	typeNode::namespacev = type -> namespacev;
 };
@@ -112,6 +119,7 @@ functionDecNode::functionDecNode(tokType id, variableNode* variableDef, std::vec
 	length = variableDef -> length;
 	
 	typeNode::type = variableDef -> type;
+	typeNode::actualType = variableDef -> type;
 	typeNode::namespacev = variableDef -> namespacev;
 }
 

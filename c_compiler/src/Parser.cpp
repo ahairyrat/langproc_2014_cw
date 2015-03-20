@@ -3,6 +3,8 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <cctype>
+#include <sstream>
 
 abstractNode* root = NULL;
 
@@ -10,7 +12,7 @@ std::list<type_s> types;
 
 std::list<type_s> pointers;
 
-void printTree(abstractNode* node);
+void printTree(abstractNode* &node);
 
 bool analyseTree();
 
@@ -19,17 +21,30 @@ bool trimTree(abstractNode* &node);
 bool analyseVariables(abstractNode* node,
 		std::list<std::map<std::string, type_t> >&scopeList);
 
-bool analyseTypes(abstractNode* node);
+bool analyseTypes(abstractNode* node, bool inFunction, type_t functionType);
 
 type_t getScopeVariable(std::string name,
 		std::list<std::map<std::string, type_t> > &scopeList);
 
 std::map<std::string, abstractNode*> functions;
 
-abstractNode* getFunctionDec(std::string name);
+std::map<std::string, abstractNode*> enums;
+
+std::map<std::string, abstractNode*> unions;
+
+std::map<std::string, abstractNode*> structs;
+
+abstractNode* getDec(std::string name,
+		std::map<std::string, abstractNode*> scope);
 
 bool compareParameters(std::vector<struct_member>& paramList1,
 		std::vector<struct_member> &paramList2);
+
+bool checkName(abstractNode* node,
+		std::list<std::map<std::string, type_t> > &scopeList);
+
+bool checkVariable(abstractNode* node,
+		std::list<std::map<std::string, type_t> > &scopeList);
 
 int main() {
 	std::string filename;
@@ -52,7 +67,7 @@ int main() {
 	return 0;
 }
 
-void printTree(abstractNode* node) {
+void printTree(abstractNode* &node) {
 	Node* currNode = (Node*) node;
 	if (currNode != NULL) {
 		if (currNode->node_type == "parserNode") {
@@ -83,7 +98,7 @@ void printTree(abstractNode* node) {
 			std::cout << '(' << ((castNode*) currNode)->type->name << ") ";
 		else if (currNode->node_type == "variableNode") {
 			if (((typeNode*) currNode)->type)
-				std::cout << ((typeNode*) currNode)->type->name << ' ';
+				std::cout << ((typeNode*) currNode)->actualType->name << ' ';
 
 			std::cout << currNode->val << ' ';
 		} else if (currNode->node_type == "functionNode") {
@@ -122,7 +137,7 @@ bool analyseTree() {
 	//Insert global scope
 	scopeList.insert(scopeList.begin(), *(new std::map<std::string, type_t>));
 	if (analyseVariables(root, scopeList))	//Analyses
-		if (analyseTypes(root))
+		if (analyseTypes(root, false, NULL))
 			return true;
 	//Delete global scope
 	scopeList.erase(scopeList.begin());
@@ -206,39 +221,26 @@ bool analyseVariables(abstractNode* node,
 		scopeList.erase(scopeList.begin());
 		return true;
 	} else if (currNode->node_type == "variableNode") {
-		if (((typeNode*) currNode)->namespacev == "unknown") {
-			std::cout << "Found undeclared variable" << std::endl;
-			if (getScopeVariable(currNode->val, scopeList)) {
-				std::cout << "Variable has been declared" << std::endl;
-				((typeNode*) currNode)->type = getScopeVariable(currNode->val,
-						scopeList);
-				((typeNode*) currNode)->namespacev =
-						((typeNode*) currNode)->type->namespacev;
-
-				return true;
-			} else {
-				printError("Undeclared variable", false, currNode->linenum);
-				return false;
-			}
-		} else {
-			std::cout << "Found declared variable" << std::endl;
-			if (!getScopeVariable(currNode->val, scopeList)) {
-				(*scopeList.begin()).insert(
-						std::pair<std::string, type_t>(currNode->val,
-								((typeNode*) currNode)->type));
-				return true;
-			} else
-				printError("Variable already declared in scope", false,
-						currNode->linenum);
+		if (!checkName(currNode, scopeList))
 			return false;
+
+		if (((variableNode*) ((typeNode*) currNode))->size)	//If it is an array with a size parameter, check that the parameter is valid
+		{
+			abstractNode* size =
+					(((variableNode*) ((typeNode*) currNode))->size);
+			if (!analyseVariables(size, scopeList))
+				return false;
+			if ((((typeNode*) (Node*) size))->type != getType("int", "type"))
+				return false;
 		}
+		return checkVariable(currNode, scopeList);
 	} else if (currNode->node_type == "functionNode") {
 		std::cout << "Found defined function" << std::endl;
 		functionNode* currNodeFunc = (functionNode*) currNode;
 		std::string name =
 				((functionDecNode*) ((typeNode*) ((Node*) (currNodeFunc->def))))->val;
 		functionDecNode* functionDec =
-				(functionDecNode*) ((typeNode*) ((Node*) getFunctionDec(name)));
+				(functionDecNode*) ((typeNode*) ((Node*) getDec(name, functions)));
 		if (functionDec != NULL) {
 			if (!compareParameters(
 					((functionDecNode*) (currNodeFunc->def))->parameters,
@@ -258,8 +260,8 @@ bool analyseVariables(abstractNode* node,
 	} else if (currNode->node_type == "functionDecNode") {
 		std::cout << "Found declared function" << std::endl;
 		functionDecNode* currNodeFunc = (functionDecNode*) currNode;
-		functionDecNode* functionDec =
-				(functionDecNode*) ((Node*) getFunctionDec(currNodeFunc->val));
+		functionDecNode* functionDec = (functionDecNode*) ((Node*) getDec(
+				currNodeFunc->val, functions));
 		if (functionDec != NULL) {
 			if (!compareParameters(currNodeFunc->parameters,
 					functionDec->parameters)) {
@@ -274,39 +276,15 @@ bool analyseVariables(abstractNode* node,
 			std::cout << "Function declared" << std::endl;
 			return true;
 		}
-	} else if (currNode->node_type == "functionCallNode") {
-		std::cout << "Found called function" << std::endl;
-		functionDecNode* functionDec =
-				(functionDecNode*) ((Node*) getFunctionDec(currNode->val));
-		if (functionDec != NULL) {
-			//Analyse types for all expressions being passed
-			std::vector < struct_member > param_types;
-			for (int i = 0;
-					i < ((functionCallNode*) currNode)->parameters->size();
-					i++) {
-				if (!analyseTypes(
-						((functionCallNode*) currNode)->parameters->at(i)))
-					return false;
-				struct_member temp;
-				temp.type =
-						((typeNode*)((Node*)((functionCallNode*) currNode)->parameters->at(i)))->type;
-				param_types.push_back(temp);
-			}
-			if (compareParameters(functionDec->parameters, param_types))
-				return true;
-			printError("Type mismatch in function call", false,
-					currNode->linenum);
-			return false;
-		} else {
-			printError("Trying to call undefined function", false,
-					currNode->linenum);
-			return false;
-		}
+	} else {
+		printError("Trying to call undefined function", false,
+				currNode->linenum);
+		return false;
 	}
 }
 
 //Add return types for functions
-bool analyseTypes(abstractNode* node) {
+bool analyseTypes(abstractNode* node, bool  inFunction, type_t function_type) {
 	std::cout << "Started type analysis" << std::endl;
 	Node* currNode = (Node*) node;
 	if (currNode->node_type == "parserNode"
@@ -314,11 +292,11 @@ bool analyseTypes(abstractNode* node) {
 		std::cout << "Found expr or assign" << std::endl;
 		parserNode* currNodeEx = (parserNode*) currNode;
 		if (currNodeEx->LHS)
-			if (!analyseTypes(currNodeEx->LHS))
+			if (!analyseTypes(currNodeEx->LHS, inFunction, function_type))
 				return false;
 		std::cout << "Analysed LHS" << std::endl;
 		if (currNodeEx->RHS)
-			if (!analyseTypes(currNodeEx->RHS))
+			if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
 				return false;
 		std::cout << "Analysed RHS" << std::endl;
 		if (currNodeEx->LHS && currNodeEx->RHS) {
@@ -332,40 +310,40 @@ bool analyseTypes(abstractNode* node) {
 			else if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type //If the type of the LHS expression is not NULL
 					&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
 					&& (
-					//int, float and double can be freely cast amongst each other without an explicit cast
-					(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-							== getType("int", "type"))
-							|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-									== getType("float", "type"))
-							|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-									== getType("double", "type")))
-					&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-							== getType("int", "type"))
-							|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-									== getType("float", "type"))
-							|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-									== getType("double", "type")))) {
+							//int, float and double can be freely cast amongst each other without an explicit cast
+							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+									== getType("int", "type"))
+									|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+											== getType("float", "type"))
+											|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+													== getType("double", "type")))
+													&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+															== getType("int", "type"))
+															|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+																	== getType("float", "type"))
+																	|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+																			== getType("double", "type")))) {
 				parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
 						new castNode(TYPE_T,
 								((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
 								currNode->linenum), currNodeEx->RHS,
-						currNode->linenum);
+								currNode->linenum);
 				currNodeEx->RHS = temp;
 			} else if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type //If the type of the LHS expression is not NULL
-			&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
+					&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
 					&& (
-					//pointers can be cast to an int with only a warning
-					(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-							== getType("int", "type"))
-					//A pointer name always ends in a '*'
-							&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).at(
-									((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).size()
+							//pointers can be cast to an int with only a warning
+							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+									== getType("int", "type"))
+									//A pointer name always ends in a '*'
+									&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).at(
+											((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).size()
 											- 1) == '*')) {
 				parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
 						new castNode(TYPE_T,
 								((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
 								currNode->linenum), currNodeEx->RHS,
-						currNode->linenum);
+								currNode->linenum);
 				currNodeEx->RHS = temp;
 			}
 
@@ -396,27 +374,69 @@ bool analyseTypes(abstractNode* node) {
 		parserNode* currNodeEx = (parserNode*) currNode;
 		currNodeEx->type = ((castNode*) ((Node*) (currNodeEx->OP)))->type;
 
+	} else if (currNode->node_type == "parserNode"
+			&& ((Node*) (((parserNode*) currNode)->OP))->id == RETURNOP_T) {
+		std::cout << "Found return statement" << std::endl;
+		if (!inFunction) {
+			printError("Cannot have return statement outside of function",
+					false, ((Node*) node)->linenum);
+			return false;
+		}
+		parserNode* currNodeEx = (parserNode*) currNode;
+		if (currNodeEx->RHS)
+			if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
+				return false;
+		if (((typeNode*) ((Node*) (currNodeEx->RHS)))->type == functionType) {
+			printError("Invalid return type", false, ((Node*) node)->linenum);
+			return false;
+		}
+		return true;
 	} else if (currNode->node_type == "parserNode") { //Base case for parserNode is to check values below
 		std::cout << "Found statement list" << std::endl;
 		parserNode* currNodeEx = (parserNode*) currNode;
 		if (currNodeEx->LHS)
-			if (!analyseTypes(currNodeEx->LHS))
+			if (!analyseTypes(currNodeEx->LHS, inFunction, function_type))
 				return false;
 		if (currNodeEx->RHS)
-			if (!analyseTypes(currNodeEx->RHS))
+			if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
 				return false;
 	} else if (currNode->node_type == "variableNode") {
 		std::cout << "Variable expression" << std::endl;
 	} else if (currNode->node_type == "functionNode") {
-
-	} else if (currNode->node_type == "functionCallNode") {
-
+		inFunction = true;
+		function_type = 
+				
+		//TO-DO add function checks		
+				
+				
 	} else if (currNode->node_type == "condNode") {
-
-	} else {
-
+		printerror("Not implemented yet", false, currNode->linenum)
+		);
+		return true;
+	} else if (currNode->node_type == "functionCallNode") {
+		std::cout << "Found called function" << std::endl;
+		functionDecNode* functionDec = (functionDecNode*) ((Node*) getDec(
+				currNode->val, functions));
+		if (functionDec != NULL) {
+			//Analyse types for all expressions being passed
+			std::vector < struct_member > param_types;
+			for (int i = 0; i < ((functionCallNode*) currNode)->parameters->size();
+					i++) {
+				if (!analyseTypes(
+						((functionCallNode*) currNode)->parameters->at(i), inFunction, function_type))
+					return false;
+				struct_member temp;
+				temp.type =
+						((typeNode*) ((Node*) ((functionCallNode*) currNode)->parameters->at(
+								i)))->type;
+				param_types.push_back(temp);
+			}
+			if (compareParameters(functionDec->parameters, param_types))
+				return true;
+			printError("Type mismatch in function call", false, currNode->linenum);
+			return false;
+		}
 	}
-	return true;
 }
 
 type_t getScopeVariable(std::string name,
@@ -435,11 +455,12 @@ type_t getScopeVariable(std::string name,
 	return NULL;
 }
 
-abstractNode* getFunctionDec(std::string name) {
+abstractNode* getDec(std::string name,
+		std::map<std::string, abstractNode*> scope) {
 	std::map<std::string, abstractNode*>::iterator it;
 	//Search through the list of declared functions
-	it = functions.find(name);
-	if (it != functions.end())
+	it = scope.find(name);
+	if (it != scope.end())
 		//The function has been found
 		return it->second;
 	return NULL;
@@ -456,4 +477,118 @@ bool compareParameters(std::vector<struct_member>& paramList1,
 			return false;
 
 	return true;
+}
+
+bool checkName(abstractNode* node,
+		std::list<std::map<std::string, type_t> > &scopeList) {
+	std::string name = ((Node*) node)->val;
+	switch (name[0]) {
+	case '[': {				//It is an array of size of the second character
+		std::cout << "Found array" << std::endl;
+		std::string sizeName = name.substr(1, name.find(']') - 1);//generate variable name for size
+		if (isalpha(name[1])) {
+			((variableNode*) ((Node*) node))->size = new variableNode(VAR_T,
+					sizeName, NULL, "unknown", ((Node*) node)->linenum);
+			return true;
+		} else if (isdigit(name[1])) {
+			((variableNode*) ((Node*) node))->size = new variableNode(CONST_T,
+					sizeName, getType("int", "type"), "const",
+					((Node*) node)->linenum);
+			return true;
+		} else
+			return false;
+		break;
+	}
+	case '.': {					//It is a struct member
+		std::cout << "Found struct member" << std::endl;
+		std::string memberName = name.substr(1, name.find('.', 2) - 1);
+		((Node*) node)->val = name.substr(name.find('.', 2) + 1);
+		if (!checkVariable(node, scopeList))//Must get reference to struct decleration
+			return false;
+		for (int i = 0;
+				i < (((variableNode*) ((Node*) node))->type->members).size(); i++)
+			if ((((variableNode*) ((Node*) node))->type->members).at(i).id
+					== memberName) {
+				std::stringstream ss;
+				ss << '.' << i << '.' << name;				//Store member index
+				((Node*) node)->val = ss.str();
+				((typeNode*) ((Node*) node))->actualType =
+						((typeNode*) ((Node*) node))->type;
+				((typeNode*) ((Node*) node))->type =
+						(((variableNode*) ((Node*) node))->type->members).at(i).type;
+				return true;
+			}
+		printError("Trying to access invalid struct member", false,
+				((Node*) node)->linenum);
+		return false;
+		break;
+	}
+	case '-': {					//It is a struct member
+		std::cout << "Found struct pointer member" << std::endl;
+		std::string memberName = name.substr(1, name.find('-', 2) - 1);
+		((Node*) node)->val = name.substr(name.find('-', 2) + 1);
+		if (!checkVariable(node, scopeList))//Must get reference to struct decleration
+			return false;
+		if (!getPointer(((Node*) node)->val.c_str())) {
+			printError("Trying to access struct member using pointer member", false,
+					((Node*) node)->linenum);
+			return false;
+		}
+		for (int i = 0;
+				i < (((variableNode*) ((Node*) node))->type->members).size(); i++)
+			if ((((variableNode*) ((Node*) node))->type->members).at(i).id
+					== memberName) {
+				std::stringstream ss;
+				ss << '-' << i << '-' << name;				//Store member index
+				((Node*) node)->val = ss.str();
+				((typeNode*) ((Node*) node))->actualType =
+						((typeNode*) ((Node*) node))->type;
+				((typeNode*) ((Node*) node))->type =
+						(((variableNode*) ((Node*) node))->type->members).at(i).type;
+				return true;
+			}
+		printError("Trying to access invalid struct member", false,
+				((Node*) node)->linenum);
+		return false;
+		break;
+	}
+	}
+	return true;
+}
+
+bool checkVariable(abstractNode* node,
+		std::list<std::map<std::string, type_t> > &scopeList) {
+	Node* currNode = (Node*) node;
+	if (((typeNode*) currNode)->namespacev == "unknown") {
+		std::cout << "Found undeclared variable" << std::endl;
+		if (getScopeVariable(currNode->val, scopeList)) {
+			std::cout << "Variable has been declared" << std::endl;
+			((typeNode*) currNode)->type = getScopeVariable(currNode->val,
+					scopeList);
+			((typeNode*) currNode)->namespacev =
+					((typeNode*) currNode)->type->namespacev;
+
+			return true;
+		} else {
+			printError("Undeclared variable", false, currNode->linenum);
+			return false;
+		}
+	} else {
+		std::cout << "Found declared variable" << std::endl;
+		if (!getScopeVariable(currNode->val, scopeList)) {
+			(*scopeList.begin()).insert(
+					std::pair<std::string, type_t>(currNode->val,
+							((typeNode*) currNode)->type));
+			return true;
+		} else if (((typeNode*) currNode)->type->namespacev == "struct"
+				|| ((typeNode*) currNode)->type->namespacev == "enum"
+						|| ((typeNode*) currNode)->type->namespacev == "union")
+			return true;
+		else if (((typeNode*) currNode)->type != ((typeNode*) currNode)->actualType)
+			return true;
+		else
+			printError("Variable already declared in scope", false,
+					currNode->linenum);
+		return false;
+	}
 }
