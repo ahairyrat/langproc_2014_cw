@@ -154,8 +154,15 @@ NUMBER_ID						0[a-zA-Z]
 
 int isType(char* string)
 {
-	if(getType(string, prevCharNamespace) == NULL)
-		return ID;
-	else
+	if(getType(string, "type"))
 		return TYPE;
+	else if(getType(string, "struct"))
+		return STRUCT_TYPE;
+ 	else if(getType(string, "enum"))
+		return ENUM_TYPE;
+	else if(getType(string, "union"))
+		return UNION_TYPE;
+	else
+		return ID;
+		
 }

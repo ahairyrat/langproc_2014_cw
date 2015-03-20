@@ -36,7 +36,7 @@
 	int int_t;
 }
 
-%token<str> ADDRESS_OR_BITWISE_AND ARITHMETIC AUTO BITWISE_INVERSE BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR BREAK CASE CHAR CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET COLON COMMA CONST CONTINUE DECREMENT DEFAULT DO ELLIPSES ELSE ENUM EQUALS EOS EXTERN FLOAT FOR FULL_STOP GOTO GREATER_THAN_EQUALS GREATER_THAN ID IF INCREMENT INT INVERSE LESS_THAN_EQUALS LESS_THAN LOGICAL_AND LOGICAL_EQUALS LOGICAL_OR MULT_OR_POINTER NOT_EQUALS NOT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET POINTER_MEMBER REGISTER RETURN SIZEOF STATIC STRING STRUCT SWITCH TYPEDEF TYPE_SIGNED TYPE_UNSIGNED TYPE_PROMOTION TYPE_LONG TYPE_SHORT TYPE UNION UNKNOWN VOLATILE WHILE CONDITIONAL_OPERATOR
+%token<str> ADDRESS_OR_BITWISE_AND ARITHMETIC AUTO BITWISE_INVERSE BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR BREAK CASE CHAR CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET COLON COMMA CONST CONTINUE DECREMENT DEFAULT DO ELLIPSES ELSE ENUM EQUALS EOS EXTERN FLOAT FOR FULL_STOP GOTO GREATER_THAN_EQUALS GREATER_THAN ID IF INCREMENT INT INVERSE LESS_THAN_EQUALS LESS_THAN LOGICAL_AND LOGICAL_EQUALS LOGICAL_OR MULT_OR_POINTER NOT_EQUALS NOT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET POINTER_MEMBER REGISTER RETURN SIZEOF STATIC STRING STRUCT SWITCH TYPEDEF TYPE_SIGNED TYPE_UNSIGNED TYPE_PROMOTION TYPE_LONG TYPE_SHORT TYPE UNION UNKNOWN VOLATILE WHILE CONDITIONAL_OPERATOR STRUCT_TYPE ENUM_TYPE UNION_TYPE
 
 %type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_statement while_statement if_statement for_statement compound_assign logic_op arithmetic_op bitwise_op statement_list program_block bracketed_statement_list function_dec program def_expr rexpr lexpr cond_statement statement return type_cast for_cond while_cond if_cond const_expr if_main else parameter_send_list function_call
 
@@ -103,17 +103,17 @@ storage 	:
 		;
 
 variable_dec_single:
-		type id_or_array				{ 
+		non_pointer_type id_or_array				{ 
 								  $$ = NULL;
 								  if($1 != NULL)	
-									$$ = new variableNode(VAR_T, $2, $1, "type", linenum);
+									$$ = new variableNode(VAR_T, $2, $1, $1 -> namespacev, linenum);
 								  else
 									yyerror("Is not a type");
 								}//int x
 		;
 
 variable_dec_stype:
-		type id_list					{
+		non_pointer_type id_list					{
 								std::list<std::string>::iterator i;
 								$$ = NULL;
 								 if($1 != NULL)
@@ -248,7 +248,7 @@ struct_def 	:					//struct s{...}
 		;
 
 struct_use 	:							//struct s
-		STRUCT id					{$$ = getType($2, "struct");
+		STRUCT STRUCT_TYPE				{$$ = getType($2, "struct");
 								   if($$ == NULL)
 									yyerror("Struct has not been defined");
 								}
@@ -328,7 +328,7 @@ program_block	:
 		;
 
 program		:
-		program program_block				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);}
+		program_block program				{$$ = new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);}
 		| program_block					{$$ = $1}
 		;
 
@@ -354,7 +354,7 @@ enum_def	:
 		;
 
 enum_use	:
-		ENUM id						{
+		ENUM ENUM_TYPE					{
 							 	   $$ = getType($2, "enum");
 								   if($$ == NULL)
 									yyerror("Enumerated has not been defined");
@@ -392,7 +392,7 @@ union_def	:
 		;
 
 union_use	:
-		UNION id					{
+		UNION UNION_TYPE				{
 								   $$ = getType($2, "union");
 								   if($$ == NULL)
 									yyerror("Union has not been defined");
@@ -700,8 +700,8 @@ array		:
 		;
 
 parameter_send_list:
-		expr COMMA parameter_send_list			{$$ = new parserNode(PARAM_T, NULL_S, $1, NULL, $3, linenum)}
-		| expr						{$$ = $1}
+		rexpr COMMA parameter_send_list			{$$ = new parserNode(PARAM_T, NULL_S, $1, NULL, $3, linenum)}
+		| rexpr						{$$ = $1}
 		;
 
 struct_member 	:	
