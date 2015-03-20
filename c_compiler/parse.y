@@ -34,11 +34,12 @@
 	abstractNode* node;
 	type_t type;
 	int int_t;
+	node_list_t node_list;
 }
 
 %token<str> ADDRESS_OR_BITWISE_AND ARITHMETIC AUTO BITWISE_INVERSE BITWISE_LEFT BITWISE_OR BITWISE_RIGHT BITWISE_XOR BREAK CASE CHAR CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET COLON COMMA CONST CONTINUE DECREMENT DEFAULT DO ELLIPSES ELSE ENUM EQUALS EOS EXTERN FLOAT FOR FULL_STOP GOTO GREATER_THAN_EQUALS GREATER_THAN ID IF INCREMENT INT INVERSE LESS_THAN_EQUALS LESS_THAN LOGICAL_AND LOGICAL_EQUALS LOGICAL_OR MULT_OR_POINTER NOT_EQUALS NOT OPEN_BRACKET OPEN_CURLY_BRACKET OPEN_SQUARE_BRACKET POINTER_MEMBER REGISTER RETURN SIZEOF STATIC STRING STRUCT SWITCH TYPEDEF TYPE_SIGNED TYPE_UNSIGNED TYPE_PROMOTION TYPE_LONG TYPE_SHORT TYPE UNION UNKNOWN VOLATILE WHILE CONDITIONAL_OPERATOR STRUCT_TYPE ENUM_TYPE UNION_TYPE
 
-%type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_statement while_statement if_statement for_statement compound_assign logic_op arithmetic_op bitwise_op statement_list program_block bracketed_statement_list function_dec program def_expr rexpr lexpr cond_statement statement return type_cast for_cond while_cond if_cond const_expr if_main else parameter_send_list function_call
+%type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_statement while_statement if_statement for_statement compound_assign logic_op arithmetic_op bitwise_op statement_list program_block bracketed_statement_list function_dec program def_expr rexpr lexpr cond_statement statement return type_cast for_cond while_cond if_cond const_expr if_main else function_call
 
 %type<str> qualifier storage length signed modifier address id address_id array id_or_array pointer struct_member
 
@@ -49,6 +50,8 @@
 %type<s_list> struct_def_param_list enum_def_param_list parameter_list
 
 %type<int_t> pointer_list
+
+%type<node_list> parameter_send_list
 
 %right EQUALS INVERSE CLOSE_BRACKET CLOSE_CURLY_BRACKET CLOSE_SQUARE_BRACKET
 
@@ -700,8 +703,8 @@ array		:
 		;
 
 parameter_send_list:
-		rexpr COMMA parameter_send_list			{$$ = new parserNode(PARAM_T, NULL_S, $1, NULL, $3, linenum)}
-		| rexpr						{$$ = $1}
+		rexpr COMMA parameter_send_list			{$$ = $3; $$ -> push_back($1);}
+		| rexpr						{$$ = new std::vector<abstractNode*>; $$ -> push_back($1);}
 		;
 
 struct_member 	:	

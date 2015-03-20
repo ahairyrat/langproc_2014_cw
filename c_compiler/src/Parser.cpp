@@ -100,7 +100,11 @@ void printTree(abstractNode* node) {
 		} else if (currNode->node_type == "functionCallNode") {
 			std::cout << currNode->val << "( ";
 			if (((functionCallNode*) currNode)->parameters) {
-				printTree(((functionCallNode*) currNode)->parameters);
+				for (int i = 0;
+						i < ((functionCallNode*) currNode)->parameters->size();
+						i++)
+					printTree(
+							((functionCallNode*) currNode)->parameters->at(i));
 			}
 			std::cout << " )";
 		} else
@@ -230,54 +234,75 @@ bool analyseVariables(abstractNode* node,
 		}
 	} else if (currNode->node_type == "functionNode") {
 		std::cout << "Found defined function" << std::endl;
-		functionNode* currNodeFunc = (functionNode*)currNode;
-		functionDecNode* functionDec;
-		if (
-				(functionDec = getFunctionDec(
-						((functionDec*)(
-								(Node*)(currNodeFunc -> def)
-								)) -> val//functionDec*
-								)
-						)
-			!= NULL){
-			if (!compareParameters(((functionDecNode*) (((functionNode*)currNodeFunc) -> def))->parameters,
+		functionNode* currNodeFunc = (functionNode*) currNode;
+		std::string name =
+				((functionDecNode*) ((typeNode*) ((Node*) (currNodeFunc->def))))->val;
+		functionDecNode* functionDec =
+				(functionDecNode*) ((typeNode*) ((Node*) getFunctionDec(name)));
+		if (functionDec != NULL) {
+			if (!compareParameters(
+					((functionDecNode*) (currNodeFunc->def))->parameters,
 					functionDec->parameters)) {
-				printError("Invalid redecleration", false, currNodeFunc->linenum);
+				printError("Invalid redecleration", false,
+						currNodeFunc->linenum);
 				return false;
 			}
 			std::cout << "Function has previously been declared" << std::endl;
 			return true;
 		} else {
-			printError("Undeclared function", false, currNodeFunc->linenum);
-			functions[currNodeFunc -> val] = currNodeFunc -> def;
+			std::cout << "Undeclared function" << std::endl;
+			functions[currNodeFunc->val] = currNodeFunc->def;
+			std::cout << "Function declared" << std::endl;
+			return true;
 		}
 	} else if (currNode->node_type == "functionDecNode") {
 		std::cout << "Found declared function" << std::endl;
-		functionDecNode* functionDec;
-		if ((functionDec = getFunctionDec(currNode->val)) != NULL) {
-			if (!compareParameters(((functionDecNode*) currNode)->parameters,
+		functionDecNode* currNodeFunc = (functionDecNode*) currNode;
+		functionDecNode* functionDec =
+				(functionDecNode*) ((Node*) getFunctionDec(currNodeFunc->val));
+		if (functionDec != NULL) {
+			if (!compareParameters(currNodeFunc->parameters,
 					functionDec->parameters)) {
-				printError("Invalid redecleration", false, currNode->linenum);
+				printError("Invalid redecleration", false,
+						currNodeFunc->linenum);
 				return false;
 			}
 			std::cout << "Function has previously been declared" << std::endl;
 			return true;
 		} else {
-			printError("Undeclared function", false, currNode->linenum);
-			functions[currNode -> val] = currnode;
+			functions[currNodeFunc->val] = currNodeFunc;
+			std::cout << "Function declared" << std::endl;
+			return true;
 		}
 	} else if (currNode->node_type == "functionCallNode") {
 		std::cout << "Found called function" << std::endl;
-		functionDecNode* functionDec;
-		if ((functionDec = getFunctionDec(currNode->val)) != NULL) {
-			std::cout << "Function has been declared" << std::endl;
-			return true;
+		functionDecNode* functionDec =
+				(functionDecNode*) ((Node*) getFunctionDec(currNode->val));
+		if (functionDec != NULL) {
+			//Analyse types for all expressions being passed
+			std::vector < struct_member > param_types;
+			for (int i = 0;
+					i < ((functionCallNode*) currNode)->parameters->size();
+					i++) {
+				if (!analyseTypes(
+						((functionCallNode*) currNode)->parameters->at(i)))
+					return false;
+				struct_member temp;
+				temp.type =
+						((typeNode*)((Node*)((functionCallNode*) currNode)->parameters->at(i)))->type;
+				param_types.push_back(temp);
+			}
+			if (compareParameters(functionDec->parameters, param_types))
+				return true;
+			printError("Type mismatch in function call", false,
+					currNode->linenum);
+			return false;
 		} else {
-			printError("Undeclared function", false, currNode->linenum);
+			printError("Trying to call undefined function", false,
+					currNode->linenum);
 			return false;
 		}
 	}
-
 }
 
 //Add return types for functions
@@ -307,40 +332,40 @@ bool analyseTypes(abstractNode* node) {
 			else if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type //If the type of the LHS expression is not NULL
 					&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
 					&& (
-							//int, float and double can be freely cast amongst each other without an explicit cast
-							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-									== getType("int", "type"))
-									|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-											== getType("float", "type"))
-											|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-													== getType("double", "type")))
-													&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-															== getType("int", "type"))
-															|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-																	== getType("float", "type"))
-																	|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-																			== getType("double", "type")))) {
+					//int, float and double can be freely cast amongst each other without an explicit cast
+					(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+							== getType("int", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+									== getType("float", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+									== getType("double", "type")))
+					&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+							== getType("int", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== getType("float", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== getType("double", "type")))) {
 				parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
 						new castNode(TYPE_T,
 								((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
 								currNode->linenum), currNodeEx->RHS,
-								currNode->linenum);
+						currNode->linenum);
 				currNodeEx->RHS = temp;
 			} else if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type //If the type of the LHS expression is not NULL
-					&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
+			&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type //and if the type of the RHS expression is not NULL
 					&& (
-							//pointers can be cast to an int with only a warning
-							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-									== getType("int", "type"))
-									//A pointer name always ends in a '*'
-									&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).at(
-											((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).size()
+					//pointers can be cast to an int with only a warning
+					(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+							== getType("int", "type"))
+					//A pointer name always ends in a '*'
+							&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).at(
+									((((typeNode*) ((Node*) (currNodeEx->RHS)))->type)->name).size()
 											- 1) == '*')) {
 				parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
 						new castNode(TYPE_T,
 								((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
 								currNode->linenum), currNodeEx->RHS,
-								currNode->linenum);
+						currNode->linenum);
 				currNodeEx->RHS = temp;
 			}
 
@@ -425,10 +450,10 @@ bool compareParameters(std::vector<struct_member>& paramList1,
 	//If the number of parameters is different, they are incompatible
 	if (paramList1.size() != paramList2.size())
 		return false;
-	for(i = 0; i < paramList1.size(); i++)
+	for (int i = 0; i < paramList1.size(); i++)
 		//compare the type between the two lists
-		if(paramList1[i].type != paramList2[i].type)
-			return false
+		if (paramList1[i].type != paramList2[i].type)
+			return false;
 
-					return true;
+	return true;
 }

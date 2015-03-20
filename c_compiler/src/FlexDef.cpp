@@ -115,7 +115,7 @@ functionDecNode::functionDecNode(tokType id, variableNode* variableDef, std::vec
 	typeNode::namespacev = variableDef -> namespacev;
 }
 
-functionCallNode::functionCallNode(tokType id, std::string val, abstractNode* parameters, int linenum)
+functionCallNode::functionCallNode(tokType id, std::string val, node_list_t parameters, int linenum)
 	:parameters(parameters)
 {
 	Node::id = id;
@@ -126,6 +126,8 @@ functionCallNode::functionCallNode(tokType id, std::string val, abstractNode* pa
 
 functionCallNode::~functionCallNode()
 {
+	for(int i = 0; i < parameters -> size(); i++)
+		delete parameters -> at(i);
 	delete parameters;
 }
 

@@ -19,8 +19,11 @@ struct type_s{
 	std::vector<struct_member> members;
 };
 
+class abstractNode{};
+
 typedef type_s* type_t;
 typedef std::list<std::string>* list_t;
+typedef std::vector<abstractNode*>* node_list_t;
 typedef std::list<struct_member>* struct_list_t;
 
 enum tokType{
@@ -71,8 +74,6 @@ enum lenType{
 	LONG_T,
 	NULLL_T
 };	
-
-class abstractNode{};
 
 class Node : public abstractNode{
 public:
@@ -154,8 +155,8 @@ public:
 
 class functionCallNode : public Node{
 public:
-	abstractNode* parameters;
-	functionCallNode(tokType id, std::string val, abstractNode* parameters, int linenum);
+	node_list_t parameters;
+	functionCallNode(tokType id, std::string val, node_list_t parameters, int linenum);
 	virtual ~functionCallNode();
 };
 
