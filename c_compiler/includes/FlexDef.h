@@ -18,6 +18,7 @@ struct type_s{
 	std::string namespacev;
 	std::string name;
 	type_s* base;
+	bool pointer;
 	std::vector<struct_member> members;
 };
 

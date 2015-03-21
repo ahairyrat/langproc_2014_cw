@@ -196,6 +196,7 @@ type_t addType(std::string namespacev, std::string name, type_s* base, std::vect
 	newType.name = name;
 	newType.base = base;
 	newType.members = members;
+	newType.pointer = false;
 	types.insert(types.end(), newType);
 	return &(types.back());
 }
@@ -206,6 +207,7 @@ type_t addPointer(std::string name, type_s* deref)
 	newType.namespacev = NULL_S;
 	newType.name = name;
 	newType.base = deref;
+	newType.pointer = true;
 	newType.members = *(new std::vector<struct_member>());
 	pointers.insert(pointers.end(), newType);
 	return &(pointers.back());

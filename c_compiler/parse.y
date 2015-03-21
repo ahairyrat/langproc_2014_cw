@@ -41,15 +41,15 @@
 
 %type<node> variable_dec_single variable_dec number unknown variable_dec_stype function_def  assign_expr expr unary_expr binary_expr switch_statement while_statement if_statement for_statement compound_assign logic_op arithmetic_op bitwise_op statement_list program_block bracketed_statement_list function_dec program def_expr rexpr lexpr cond_statement statement return type_cast for_cond while_cond if_cond const_expr if_main else function_call
 
-%type<str> qualifier storage length signed modifier address id address_id array id_or_array pointer struct_member
+%type<str> qualifier storage length signed modifier id address_id array id_or_array struct_member
 
-%type<list> address_list id_list modifier_list qualifier_list
+%type<list> id_list modifier_list qualifier_list
 
 %type<type> basic_type type non_pointer_type non_pointer_basic_type union_def modified_union  union union_use enum enum_def enum_use modified_enum struct_use struct_def struct modified_struct data_structure
 
 %type<s_list> struct_def_param_list enum_def_param_list parameter_list
 
-%type<int_t> pointer_list
+%type<int_t> pointer_list pointer address address_list
 
 %type<node_list> parameter_send_list
 
@@ -84,8 +84,8 @@ basic_type 	:						//int, char, void etc.
 		;
 
 pointer 	:					
-		MULT_OR_POINTER qualifier_list			{/*Link through qualified pointer*/}//*const
-		| MULT_OR_POINTER				{/*Link through pointer*/}//*
+		MULT_OR_POINTER						{/*Link through pointer*/}//*
+		//| MULT_OR_POINTER qualifier_list			{/*Link through qualified pointer*/}//*const
 		;
 
 pointer_list 	:						//Unbounded list of pointers
@@ -208,17 +208,23 @@ id		:
 		;
 
 address_id	:
-		address_list id					{$$ = $2;}
+		address_list id					{std::stringstream ss;
+								ss << '*';
+								ss << $1;
+								ss  << '*';
+								ss << $2;
+								$$ = strdup(ss.str().c_str());
+								}
 		;
 
 address		:
-		MULT_OR_POINTER					{$$ = $1}
-		| ADDRESS_OR_BITWISE_AND			{$$ = $1}
+		pointer						{$$ = 1}
+		| ADDRESS_OR_BITWISE_AND			{$$ = -1}
 		;
 
 address_list	:
-		address address_list				{$$ = $2; $$ -> insert($$ -> begin(), *(new std::string($1)));}
-		| address					{$$ = new std::list<std::string>(); $$ -> insert($$ -> end(), *(new std::string($1)));}
+		address address_list				{$$ = $2; $$+=$1}
+		| address					{$$ = $1}
 		;
 
 length 		:						//long, short
