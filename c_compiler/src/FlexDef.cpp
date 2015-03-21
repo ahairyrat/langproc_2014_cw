@@ -1,4 +1,6 @@
 
+#ifndef __C_COMPILER_DEFINITIONS
+#define __C_COMPILER_DEFINITIONS
 
 #include "../includes/FlexDef.h"
 #include <algorithm>
@@ -223,3 +225,6 @@ std::vector<struct_member> build_struct_members(const struct_list_t memberList)
 	}
 	return members;
 }
+
+
+#endif

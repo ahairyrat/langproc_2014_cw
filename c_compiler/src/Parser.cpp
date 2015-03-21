@@ -1,5 +1,6 @@
 #include "../includes/FlexDef.h"
 #include "../includes/Errors.h"
+#include "../includes/Translator.h"
 #include <iostream>
 #include <list>
 #include <map>
@@ -59,11 +60,12 @@ int main() {
 	std::cin >> filename;
 	if (!parse(filename))
 		printError("Error parsing file", true, 0);
-	else if (analyseTree()) {
-		printTree(root);
-		std::cout << std::endl;
-	} else
+	else if (!analyseTree())
 		printError("Error analysing code", true, 0);
+	else if(translate(root))
+	
+	
+	
 	return 0;
 }
 
@@ -144,7 +146,10 @@ bool analyseTree() {
 		std::cout << "Variable checks complete" << std::endl << std::endl;
 		if (analyseTypes(root, false, NULL)) {
 			std::cout << "Type checks complete" << std::endl << std::endl;
+			std::cout << "All checks complete" <<std::endl;
+			//Delete global scope
 			scopeList.erase(scopeList.begin());
+			
 			return true;
 		}
 	}
