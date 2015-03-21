@@ -472,7 +472,7 @@ if_cond		:
 		;
 
 while_cond	:
-		WHILE OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new parserNode(WHILE_COND_T, NULL_S, $3, NULL, NULL, linenum);}
+		WHILE OPEN_BRACKET expr CLOSE_BRACKET		{$$ = new condNode(WHILE_COND_T, NULL_S, $3, NULL, NULL, linenum);}
 		;
 
 while_statement	:
@@ -490,7 +490,15 @@ bracketed_statement_list :
 		;
 
 statement_list	:
-		statement_list statement			{$$ = new parserNode(NULL_T, NULL_S, $1, NULL,$2, linenum); }
+		statement_list statement			{if(((Node*)$1)->node_type == "parserNode" && ((Node*)$1) -> id == NULL_T)
+									{
+										parserNode* temp;
+										temp= new parserNode(NULL_T, NULL_S, ((parserNode*)((Node*)$1)) -> RHS, NULL,$2, linenum); 
+										$$ =  new parserNode(NULL_T, NULL_S, ((parserNode*)((Node*)$1)) -> LHS, NULL, temp, linenum);
+									}
+								else
+									$$ =  new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);
+								}
 		| statement					{$$ = $1}
 		;
 
@@ -568,11 +576,11 @@ const_expr	:
 
 unary_expr	:
 		const_expr					{$$ = $1;}
-		| INCREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "+", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
-		| DECREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "-", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
-		| INVERSE unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, new Node(CONST_T, "0", linenum), new Node(UNOP_T, "-", linenum), $2, linenum);}
-		| unary_expr INCREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "+", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
-		| unary_expr DECREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "-", linenum), new Node(CONST_T, "1", linenum), linenum), linenum);}
+		| INCREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "+", linenum), new variableNode(CONST_T, "1", getType("int", "type"), "const", linenum), linenum), linenum);}
+		| DECREMENT unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, $2, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $2, new Node(UNOP_T, "-", linenum), new variableNode(CONST_T, "1", getType("int", "type"), "const", linenum), linenum), linenum);}
+		| INVERSE unary_expr				{$$ = new parserNode(EXPR_T, NULL_S, new variableNode(CONST_T, "0", getType("int", "type"), "const", linenum), new Node(UNOP_T, "-", linenum), $2, linenum);}
+		| unary_expr INCREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "+", linenum), new variableNode(CONST_T, "1", getType("int", "type"), "const", linenum), linenum), linenum);}
+		| unary_expr DECREMENT				{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T,"=", linenum), new parserNode(EXPR_T,NULL_S, $1, new Node(UNOP_T, "-", linenum), new variableNode(CONST_T, "1", getType("int", "type"), "const", linenum), linenum), linenum);}
 		| type_cast unary_expr				{$$ = new parserNode(CAST_T, NULL_S, NULL, $1, $2, linenum);}
 		| OPEN_BRACKET expr CLOSE_BRACKET		{$$ = $2}
 		| function_call					{$$ = $1;}

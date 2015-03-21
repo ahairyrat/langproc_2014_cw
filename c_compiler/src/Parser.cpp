@@ -100,7 +100,8 @@ void printTree(abstractNode* &node) {
 			if (((typeNode*) currNode)->type)
 				std::cout << ((typeNode*) currNode)->type->name << ' ';
 			if (((typeNode*) currNode)->actualType)
-				std::cout <<'/' << ((typeNode*) currNode)->actualType-> name << ' ';
+				std::cout << '/' << ((typeNode*) currNode)->actualType->name
+				<< ' ';
 
 			std::cout << currNode->val << ' ';
 		} else if (currNode->node_type == "functionNode") {
@@ -236,17 +237,20 @@ bool analyseVariables(abstractNode* node,
 		}
 		return true;
 	} else if (currNode->node_type == "variableNode") {
-		if (!checkName(currNode, scopeList))
-			return false;
+		if (!currNode->id == CONST_T) {
+			if (!checkName(currNode, scopeList))
+				return false;
 
-		if (((variableNode*) ((typeNode*) currNode))->size)	//If it is an array with a size parameter, check that the parameter is valid
-		{
-			abstractNode* size =
-					(((variableNode*) ((typeNode*) currNode))->size);
-			if (!analyseVariables(size, scopeList))
-				return false;
-			if ((((typeNode*) (Node*) size))->type != getType("int", "type"))
-				return false;
+			if (((variableNode*) ((typeNode*) currNode))->size)	//If it is an array with a size parameter, check that the parameter is valid
+			{
+				abstractNode* size =
+						(((variableNode*) ((typeNode*) currNode))->size);
+				if (!analyseVariables(size, scopeList))
+					return false;
+				if ((((typeNode*) (Node*) size))->type
+						!= getType("int", "type"))
+					return false;
+			}
 		}
 		return checkVariable(currNode, scopeList);
 	} else if (currNode->node_type == "functionNode") {
@@ -291,9 +295,41 @@ bool analyseVariables(abstractNode* node,
 			std::cout << "Function declared" << std::endl;
 			return true;
 		}
+	} else if (currNode->node_type == "condNode") {
+		std::cout << "Found if or while loop" << std::endl;
+		condNode* currNodeIf = (condNode*) currNode;
+		if (currNodeIf->condition)
+			if (!analyseVariables(currNodeIf->condition, scopeList))
+				return false;
+		std::cout << "Analysed condition" << std::endl;
+		if (currNodeIf->cond_true)
+			if (!analyseVariables(currNodeIf->cond_true, scopeList))
+				return false;
+		std::cout << "Analysed true branch" << std::endl;
+		if (currNodeIf->cond_false)
+			if (!analyseVariables(currNodeIf->cond_false, scopeList))
+				return false;
+		std::cout << "Analysed false branch" << std::endl;
+		return true;
+	} else if (currNode->node_type == "forNode") {
+		std::cout << "Found for loop" << std::endl;
+		forNode* currNodeIf = (forNode*) currNode;
+		if (currNodeIf->initial)
+			if (!analyseVariables(currNodeIf->initial, scopeList))
+				return false;
+		std::cout << "Analysed initial" << std::endl;
+		if (currNodeIf->condition)
+			if (!analyseVariables(currNodeIf->condition, scopeList))
+				return false;
+		std::cout << "Analysed condition" << std::endl;
+		if (currNodeIf->repeat)
+			if (!analyseVariables(currNodeIf->repeat, scopeList))
+				return false;
+		std::cout << "Analysed repeat" << std::endl;
+		return true;
+
 	} else {
-		printError("Trying to call undefined function", false,
-				currNode->linenum);
+		printError("Unknown error", false, currNode->linenum);
 		return false;
 	}
 }
@@ -418,6 +454,44 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 			return true;
 		}
 		return true;
+	} else if (currNode->node_type == "parserNode" && currNode->id == LOOP_T) {
+		parserNode* currNodeLoop = (parserNode*) currNode;
+		if (((Node*) (currNodeLoop->LHS))->node_type == "forNode") {
+			std::cout << "Found for loop" << std::endl;
+			forNode* currNodeFor = (forNode*) ((Node*) (currNodeLoop->LHS));
+			if (!currNodeFor->condition || !currNodeFor->initial
+					|| !currNodeFor->repeat) {
+				printError("Missing for loop initialisation", false,
+						currNode->linenum);
+				return false;
+			}
+			if (!analyseTypes(currNodeFor->initial, inFunction, function_type))
+				return false;
+			std::cout << "Analysed initial" << std::endl;
+			if (!analyseTypes(currNodeFor->condition, inFunction,
+					function_type))
+				return false;
+			std::cout << "Analysed condition" << std::endl;
+			if (!analyseTypes(currNodeFor->repeat, inFunction, function_type))
+				return false;
+			std::cout << "Analysed repeat" << std::endl;
+			return analyseTypes(currNodeLoop->RHS, inFunction, function_type);
+
+		} else if (((Node*) (currNodeLoop->LHS))->node_type == "condNode") {
+			std::cout << "Found while loop" << std::endl;
+			condNode* currNodeWhile = (condNode*) ((Node*) (currNodeLoop->LHS));
+			if (!currNodeWhile->condition) {
+				printError("Missing while loop condition", false,
+						currNode->linenum);
+				return false;
+			}
+			if (!analyseTypes(currNodeWhile->condition, inFunction,
+					function_type))
+				return false;
+			return analyseTypes(currNodeLoop->RHS, inFunction, function_type);
+		}
+
+		return false;
 	} else if (currNode->node_type == "parserNode") { //Base case for parserNode is to check values below
 		std::cout << "Found statement list" << std::endl;
 		parserNode* currNodeEx = (parserNode*) currNode;
@@ -443,7 +517,7 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 		return true;
 	} else if (currNode->node_type == "condNode") {
 		printError("Not implemented yet", false, currNode->linenum);
-		return true;
+		return false;
 	} else if (currNode->node_type == "functionCallNode") {
 		std::cout << "Found called function" << std::endl;
 		functionDecNode* functionDec = (functionDecNode*) ((Node*) getDec(
@@ -545,7 +619,7 @@ bool checkName(abstractNode* node,
 			if ((((variableNode*) ((Node*) node))->type->members).at(i).id
 					== memberName) {
 				std::stringstream ss;
-				ss << '.' << i << '.' << ((Node*) node)->val;				//Store member index
+				ss << '.' << i << '.' << ((Node*) node)->val;//Store member index
 				((Node*) node)->val = ss.str();
 				((typeNode*) ((Node*) node))->actualType =
 						((typeNode*) ((Node*) node))->type;
@@ -575,7 +649,7 @@ bool checkName(abstractNode* node,
 			if ((((variableNode*) ((Node*) node))->type->members).at(i).id
 					== memberName) {
 				std::stringstream ss;
-				ss << '-' << i << '-' << ((Node*) node)->val;				//Store member index
+				ss << '-' << i << '-' << ((Node*) node)->val;//Store member index
 				((Node*) node)->val = ss.str();
 				((typeNode*) ((Node*) node))->actualType =
 						((typeNode*) ((Node*) node))->type;
@@ -611,14 +685,16 @@ bool checkVariable(abstractNode* node,
 		}
 	} else {
 		std::cout << "Found declared variable" << std::endl;
-		if (!getScopeVariable(currNode->val, scopeList)) {
+		if (!getScopeVariable(currNode->val, scopeList)
+				&& !(currNode->id == CONST_T)) {
 			(*scopeList.begin()).insert(
 					std::pair<std::string, type_t>(currNode->val,
 							((typeNode*) currNode)->type));
 			return true;
 		} else if (((typeNode*) currNode)->type->namespacev == "struct"
 				|| ((typeNode*) currNode)->type->namespacev == "enum"
-						|| ((typeNode*) currNode)->type->namespacev == "union")
+						|| ((typeNode*) currNode)->type->namespacev == "union"
+								|| currNode->id == CONST_T)
 			return true;
 		else if (((typeNode*) currNode)->type
 				!= ((typeNode*) currNode)->actualType)
