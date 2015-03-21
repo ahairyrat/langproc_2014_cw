@@ -687,8 +687,8 @@ def_expr	:
 		;
 
 return		:
-		RETURN rexpr					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1, linenum), $2, linenum)}
-		| RETURN					{$$ = new parserNode(EXPR_T, NULL_S, NULL, new Node(RETURNOP_T, $1, linenum), NULL, linenum)}
+		RETURN rexpr					{$$ = new parserNode(RETURN_T, NULL_S, NULL, new Node(RETURNOP_T, $1, linenum), $2, linenum)}
+		| RETURN					{$$ = new parserNode(RETURN_T, NULL_S, NULL, new Node(RETURNOP_T, $1, linenum), NULL, linenum)}
 		;
 
 array		:

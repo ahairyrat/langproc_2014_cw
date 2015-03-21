@@ -52,7 +52,8 @@ enum tokType{
 	COND_T,
 	FUNC_CALL_T,
 	PARAM_T,
-	CAST_T
+	CAST_T,
+	RETURN_T
 };
 
 enum storType{
