@@ -330,7 +330,7 @@ parameter_list 	:				//unbounded list of variable declerations
 program_block	:
 		variable_dec EOS				{$$ = $1;}
 		| def_expr					{$$ = NULL}
-		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(ASSIGN_T, NULL_S, $1, new Node(ASSIGN_T, $2, linenum), $3, linenum);}
+		| variable_dec EQUALS rexpr EOS			{$$ = new parserNode(EXPR_T, NULL_S, $1, new Node(ASSIGN_T, $2, linenum), $3, linenum);}
 		| bracketed_statement_list			{$$ = $1}
 		| typedef EOS					{$$ = NULL}
 		| function_def					{$$ = $1}
@@ -496,14 +496,26 @@ bracketed_statement_list :
 		;
 
 statement_list	:
-		statement_list statement			{if(((Node*)$1)->node_type == "parserNode" && ((Node*)$1) -> id == NULL_T)
+		statement_list statement			{$$ = $1;
+								if(((Node*)$$)->node_type == "parserNode" && ((Node*)$$) -> id == NULL_T)
+								{
+									std::cout << "a" << std::endl;
+									parserNode* temp = (parserNode*)((typeNode*)((Node*)($$)));
+									parserNode* temp2;
+								  	while(((Node*)temp)->node_type == "parserNode" && ((Node*)temp) -> id == NULL_T)
 									{
-										parserNode* temp;
-										temp= new parserNode(NULL_T, NULL_S, ((parserNode*)((Node*)$1)) -> RHS, NULL,$2, linenum); 
-										$$ =  new parserNode(NULL_T, NULL_S, ((parserNode*)((Node*)$1)) -> LHS, NULL, temp, linenum);
+										temp2 = temp;
+										temp = (parserNode*)((typeNode*)((Node*)(temp -> RHS)));
+										std::cout << temp -> id << std::endl;
 									}
-								else
-									$$ =  new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);
+		
+								  	temp =  new parserNode(NULL_T, NULL_S, temp, NULL, $2, linenum);
+									temp2 -> RHS = temp;
+								}
+								else{
+ 									$$ =  new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);
+									std::cout << "b" <<std::endl;
+								}
 								}
 		| statement					{$$ = $1}
 		;

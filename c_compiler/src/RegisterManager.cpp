@@ -1,11 +1,11 @@
 #include "../includes/RegisterManager.h"
 #include <iostream>
 
-RegisterManager::RegisterManager()
+RegisterManager::RegisterManager(CodeGenerator *codeGenerator)
 {
+	this -> codeGenerator = codeGenerator;
 	freeMemoryLoc = 0;
-	for (int i = 0; i < NO_REGISTERS; i++)
-	{
+	for (int i = 0; i < NO_REGISTERS; i++) {
 		InstructionData tempData;
 		tempData.variableName = "";
 		tempData.registerLocation = 0;
@@ -16,25 +16,23 @@ RegisterManager::RegisterManager()
 		tempNode.data = tempData;
 		registers[i] = tempNode;
 	}
-};
+}
+;
 
+RegisterManager::~RegisterManager() {
 
-RegisterManager::~RegisterManager()
-{
+}
+;
 
-};
-
-unsigned RegisterManager::allocate(const std::string variableName){
+unsigned RegisterManager::allocate(const std::string variableName) {
 	int loc, reg;
 	InstructionData data;
 	//Check if the variable has already been allocated
-	if ((reg = getRegister(variableName)) > -1)
-	{
+	if ((reg = getRegister(variableName)) > -1) {
 		increment(reg);
 	}
 	//If the variable is not in a register, it may be in memory
-	else if ((loc = getMemory(variableName)) > -1)
-	{
+	else if ((loc = getMemory(variableName)) > -1) {
 		//Extract currently stored  
 		data = memory[loc].data;
 		//If the previously allocated register is free, we may as well keep it consistent
@@ -53,37 +51,38 @@ unsigned RegisterManager::allocate(const std::string variableName){
 		increment(reg);
 	}
 	//If the variable has not been previously allocated, we need to find  aplace to store it
-	else{
+	else {
 		reg = findLRU();
 		//If another variable is using a register, store that one first
 		if (registers[reg].valid)
 			store(registers[reg], reg);
-		
+
 		data.variableName = variableName;
 		data.registerLocation = reg;
-		data.memoryLocation = 0;
+		data.memoryLocation = globalMemoryLocation;
 		registers[reg].valid = true;
 		registers[reg].data = data;
 		registers[reg].TimeSinceUse = 0;
 		increment(reg);
+		globalMemoryLocation++;
 	}
 	return reg;
-};
+}
+;
 
-void RegisterManager::deallocate(const std::string variableName){
+void RegisterManager::deallocate(const std::string variableName) {
 	unsigned loc;
 
-	if((loc = getRegister(variableName)) != -1){
+	if ((loc = getRegister(variableName)) != -1) {
 		registers[loc].valid = false;
-	}
-	else{
+	} else {
 		loc = getMemory(variableName);
 		memory.erase(memory.begin() + loc);
 	}
-};
+}
+;
 
-
-InstructionData* RegisterManager::get(const std::string variableName){
+InstructionData* RegisterManager::get(const std::string variableName) {
 	unsigned loc;
 	if ((loc = getRegister(variableName)) > -1)
 		return &(registers[loc].data);
@@ -91,41 +90,44 @@ InstructionData* RegisterManager::get(const std::string variableName){
 		return &(memory[loc].data);
 	else
 		throw new RegisterAllocationException;
-};
+}
+;
 
-int RegisterManager::getRegister(const std::string variableName){
+int RegisterManager::getRegister(const std::string variableName) {
 	for (unsigned i = 0; i < NO_REGISTERS; i++)
-		if (registers[i].data.variableName == variableName)
-		{
+		if (registers[i].data.variableName == variableName) {
 			return i;
 		}
 	return -1;
-};
+}
+;
 
-int RegisterManager::getMemory(const std::string variableName){
+int RegisterManager::getMemory(const std::string variableName) {
 
 	for (unsigned i = 0; i < memory.size(); i++)
 		if (memory[i].data.variableName == variableName)
 			return i;
 	return -1;
-};
+}
+;
 
-void RegisterManager::store(const ListNode node, unsigned reg){
+void RegisterManager::store(const ListNode node, unsigned reg) {
 	if (!node.valid)
 		return;
 	//Write the load instruction to fetch data from memory
 	//the offset location is multiplied by 4 due to word and byte addressing 
-	//codeGenerator.write(STORE_ASM, reg, 4*node.data.memoryLocation);
+	codeGenerator -> write(STR_ASM, reg, 12, 4 * node.data.memoryLocation);
 	ListNode storable = node;
 	storable.TimeSinceUse = 0;
 	//storable.data.memoryLocation = getFreeMemoryLoc();
 	memory.push_front(storable);
-};
+}
+;
 
 /*	A function to load a varaible from memory into a register
-	Will throw a MemoryAllocationException if the value cannot be found in memory
-*/
-void RegisterManager::load(const std::string variableName, unsigned reg){
+ Will throw a MemoryAllocationException if the value cannot be found in memory
+ */
+void RegisterManager::load(const std::string variableName, unsigned reg) {
 	int loc;
 	if ((loc = getMemory(variableName)) <= -1)
 		//Variable does not exist
@@ -133,40 +135,41 @@ void RegisterManager::load(const std::string variableName, unsigned reg){
 	reg = allocate(variableName);
 	//Write the load instruction to fetch data from memory
 	//the offset location is multiplied by 4 due to word and byte addressing 
-	//codeGenerator.write(LOAD_ASM, reg, 4*loc);
-	memory.erase(memory.begin()+loc);
-};
+	codeGenerator -> write(LDR_ASM, reg, 12, 4 * loc);
+	memory.erase(memory.begin() + loc);
+}
+;
 
-unsigned RegisterManager::findLRU(){
+unsigned RegisterManager::findLRU() {
 	int MaxTimeSinceUse = -1;
 	unsigned LRURegister = 0;
 	int CurrTimeSinceUse;
-	for (unsigned i = 0; i < NO_REGISTERS; i++)
-	{
+	for (unsigned i = 0; i < NO_REGISTERS; i++) {
 		if (!registers[i].valid)
 			return i;
 
 		CurrTimeSinceUse = registers[i].TimeSinceUse;
-		if (CurrTimeSinceUse > MaxTimeSinceUse)
-		{
+		if (CurrTimeSinceUse > MaxTimeSinceUse) {
 			LRURegister = i;
 			MaxTimeSinceUse = CurrTimeSinceUse;
 		}
 	}
 	return LRURegister;
-};
+}
+;
 
-void RegisterManager::increment(int reg)
-{
+void RegisterManager::increment(int reg) {
 	for (unsigned i = 0; i < NO_REGISTERS; i++)
-		if(i == reg)
+		if (i == reg)
 			registers[i].TimeSinceUse = 0;
 		else
 			registers[i].TimeSinceUse++;
-};
+}
+;
 
-void RegisterManager::printRegisters()
-{
+void RegisterManager::printRegisters() {
 	for (unsigned i = 0; i < NO_REGISTERS; i++)
-		std::cout << registers[i].data.variableName << ' ' << registers[i].TimeSinceUse << std::endl;
-};
+		std::cout << registers[i].data.variableName << ' '
+		<< registers[i].TimeSinceUse << std::endl;
+}
+;

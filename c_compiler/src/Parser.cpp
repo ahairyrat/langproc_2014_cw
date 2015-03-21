@@ -58,14 +58,20 @@ int main() {
 	addPointer("char*", getType("char", "type"));
 	std::cout << "Please enter filename to be compiled" << std::endl;
 	std::cin >> filename;
+	Translator translator(root, "test.s");
 	if (!parse(filename))
 		printError("Error parsing file", true, 0);
-	else if (!analyseTree())
+	else if (analyseTree())
+	{
+		printTree(root);
+		translator.setRoot(root);
+		if (!translator.translate())
+			printError("Error compiling code", true, 0);
+		else
+			std::cout << "Code generation complete" << std::endl;
+	}else
 		printError("Error analysing code", true, 0);
-	else if(translate(root))
-	
-	
-	
+
 	return 0;
 }
 
@@ -146,10 +152,9 @@ bool analyseTree() {
 		std::cout << "Variable checks complete" << std::endl << std::endl;
 		if (analyseTypes(root, false, NULL)) {
 			std::cout << "Type checks complete" << std::endl << std::endl;
-			std::cout << "All checks complete" <<std::endl;
 			//Delete global scope
 			scopeList.erase(scopeList.begin());
-			
+			std::cout << "All checks complete" << std::endl;
 			return true;
 		}
 	}
@@ -208,7 +213,7 @@ bool analyseVariables(abstractNode* node,
 	//A variable is in scope in its current branch starting from itself and the node left of it 
 	//				root
 	//			/		\
-	//		int a		+			a is in scope, b is not
+	//		int a		+			a is in the scope, b is not
 	//				/		\
 	//				a		b
 
