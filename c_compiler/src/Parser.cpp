@@ -247,7 +247,8 @@ bool analyseVariables(abstractNode* node,
 		}
 		return true;
 	} else if (currNode->node_type == "variableNode") {
-		if (!currNode->id == CONST_T) {
+		if (currNode->id != CONST_T) {
+			
 			if (!checkName(currNode, scopeList))
 				return false;
 

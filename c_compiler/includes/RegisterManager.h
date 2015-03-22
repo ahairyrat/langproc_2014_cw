@@ -56,7 +56,10 @@ public:
 	void restoreAliasRegisters();
 	
 	void invalidateLocalRegisters();
+	
+	int getMemory(std::string variableName);
 
+	
 private:
 	unsigned findLRU();
 
@@ -64,11 +67,10 @@ private:
 
 	int getRegister(std::string variableName);
 
-	int getMemory(std::string variableName);
-
 	void store(ListNode node, unsigned reg);
+	
 	void load(std::string variableName, unsigned reg);
-
+	
 	void increment(int reg);
 
 	ListNode registers[NO_REGISTERS];

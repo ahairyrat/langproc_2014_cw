@@ -10,7 +10,7 @@ CodeGenerator::~CodeGenerator() {
 }
 ;
 
-void CodeGenerator::write(ASM_T cmd, int rt, int r1, int r2) {
+void CodeGenerator::write(ASM_T cmd, unsigned rt, unsigned r1, unsigned r2) {
 	switch (cmd) {
 	case LDR_ASM:
 		outputFileStream << '\t' << "LDR R" << rt << ", [R" << r1 << ", #" << r2 << " ]"

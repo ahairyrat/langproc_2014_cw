@@ -140,8 +140,8 @@ NUMBER_ID						0[a-zA-Z]
 
 	/*The following values may match any of the above so it is best to seperate them*/
 {ID}								yylval.str = strdup(yytext);return isType(yytext);
-{NUMBER_ID}?{NUMBER}L?						yylval.str = strdup(yytext);return INT;
-[0-9]+{FULL_STOP}[0-9]+L?					yylval.str = strdup(yytext);return FLOAT;
+{NUMBER_ID}?{NUMBER}						yylval.str = strdup(yytext);return INT;
+[0-9]+{FULL_STOP}[0-9]+						yylval.str = strdup(yytext);return FLOAT;
 [ \t]+								/*Consumes all whitespace*/
 ^#.*$								/*consumes preprocessor instructions */
 \/\/.*$								/*Consumes in line comments*/

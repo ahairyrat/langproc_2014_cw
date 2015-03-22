@@ -41,7 +41,7 @@ public:
 	CodeGenerator(std::string &outputFile);
 	virtual ~CodeGenerator();
 
-	void write(ASM_T cmd, int rt, int r1, int r2);
+	void write(ASM_T cmd, unsigned rt, unsigned r1, unsigned r2);
 	
 	void writeLabel(std::string label);
 	
