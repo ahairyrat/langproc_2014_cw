@@ -22,10 +22,14 @@ private:
 	abstractNode* root;
 	
 	int tempVal;
+	
+	int labelVal;
 
 	bool translateNode(abstractNode* node);
 	
 	std::string generateTempName(abstractNode*);
+	
+	std::string generateLabel();
 };
 
 #endif

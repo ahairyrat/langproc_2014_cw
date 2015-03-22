@@ -131,6 +131,8 @@ functionCallNode::functionCallNode(tokType id, std::string val,
 	Node::node_type = "functionCallNode";
 	Node::val = val;
 	Node::linenum = linenum;
+	
+	typeNode::type = NULL;
 }
 
 functionCallNode::~functionCallNode() {

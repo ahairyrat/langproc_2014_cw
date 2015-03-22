@@ -164,7 +164,7 @@ public:
 			std::vector<struct_member> parameters, int linenum);
 };
 
-class functionCallNode: public Node {
+class functionCallNode: public typeNode {
 public:
 	node_list_t parameters;
 	functionCallNode(tokType id, std::string val, node_list_t parameters,

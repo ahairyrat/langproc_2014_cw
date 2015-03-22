@@ -118,12 +118,37 @@ variable_dec_single:
 variable_dec_stype:
 		non_pointer_type id_list					{
 								std::list<std::string>::iterator i;
-								$$ = NULL;
-								 if($1 != NULL)
-									for( i = $2->begin(); i != $2->end(); i++)
-									    	$$ = new parserNode(NULL_T,NULL_S,$$,NULL,new variableNode(VAR_T, *i, $1, $1 -> namespacev, linenum), linenum);		
+								 if($1 != NULL){
+									$$ = new variableNode(VAR_T, *($2->begin()), $1, $1 -> namespacev, linenum);
+									i = $2->begin();
+									i++;						//Get iterator to secoond value
+									for( i; i != $2->end(); i++)
+									{
+										if(((Node*)$$)->node_type == "parserNode" && ((Node*)$$) -> id == NULL_T)
+										{
+											parserNode* temp = (parserNode*)((typeNode*)((Node*)($$)));
+											parserNode* temp2;
+								  			while(((Node*)temp)->node_type == "parserNode" && ((Node*)temp) -> id == NULL_T)
+											{
+												temp2 = temp;
+												temp = (parserNode*)((typeNode*)((Node*)(temp -> RHS)));
+												std::cout << temp -> id << std::endl;
+											}
+		
+								  			temp =  new parserNode(NULL_T, NULL_S, temp, NULL, new variableNode(VAR_T, *i, $1, $1 -> namespacev,linenum), linenum);
+											temp2 -> RHS = temp;
+										}
+										else{
+ 											$$ =  new parserNode(NULL_T, NULL_S, $$, NULL, new variableNode(VAR_T, *i, $1, $1 -> namespacev, linenum), linenum);
+										}
+									}
+								}
+									  
 								 else
+								{
+									$$ = NULL;
 									yyerror("Is not a type");
+								}
 								}//int x, y, z
 		;
 
@@ -280,7 +305,9 @@ function_dec	:
 		;
 
 function_call 	:
-		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{$$ = new functionCallNode(FUNC_CALL_T, $1, $3, linenum);}
+		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{std::cout << $3 -> size() << std::endl;
+									$$ = new functionCallNode(FUNC_CALL_T, $1, $3, linenum);
+									std::cout << ((functionCallNode*)((Node*)$$)) -> parameters -> size() << std::endl;}
 		| id OPEN_BRACKET CLOSE_BRACKET				{$$ = new functionCallNode(FUNC_CALL_T, $1, NULL, linenum);}
 		;
 
@@ -422,13 +449,13 @@ modified_union	:
 		;
 
 compound_assign	:
-		NOT_EQUALS					{$$ = new Node(LOGICOP_T, $1, linenum)}	//!=		
-		| arithmetic_op EQUALS				{$$ = $1}	//+= -= *= /=
+		arithmetic_op EQUALS				{$$ = $1}	//+= -= *= /=
 		| bitwise_op EQUALS				{$$ = $1}	//^= <<= >>= etc.
 		;
 
 logic_op	:
-		NOT						{$$ = new Node(LOGICOP_T, $1, linenum)}	//!
+		NOT_EQUALS					{$$ = new Node(LOGICOP_T, $1, linenum)}	//!=
+		| NOT						{$$ = new Node(LOGICOP_T, $1, linenum)}	//!
 		| GREATER_THAN					{$$ = new Node(LOGICOP_T, $1, linenum)}	//>
 		| GREATER_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1, linenum)}	//>=
 		| LESS_THAN_EQUALS				{$$ = new Node(LOGICOP_T, $1, linenum)}	//<=
@@ -444,7 +471,7 @@ bitwise_op	:
 		| BITWISE_LEFT					{$$ = new Node(BITOP_T, $1, linenum)}	//<<
 		| BITWISE_OR					{$$ = new Node(BITOP_T, $1, linenum)}	//|
 		| BITWISE_RIGHT					{$$ = new Node(BITOP_T, $1, linenum)}	//>>
-		| BITWISE_XOR					{$$ = new Node(LOGICOP_T, $1, linenum)}	//^
+		| BITWISE_XOR					{$$ = new Node(BITOP_T, $1, linenum)}	//^
 		;
 
 qualifier_list	:
@@ -499,7 +526,6 @@ statement_list	:
 		statement_list statement			{$$ = $1;
 								if(((Node*)$$)->node_type == "parserNode" && ((Node*)$$) -> id == NULL_T)
 								{
-									std::cout << "a" << std::endl;
 									parserNode* temp = (parserNode*)((typeNode*)((Node*)($$)));
 									parserNode* temp2;
 								  	while(((Node*)temp)->node_type == "parserNode" && ((Node*)temp) -> id == NULL_T)
@@ -514,7 +540,6 @@ statement_list	:
 								}
 								else{
  									$$ =  new parserNode(NULL_T, NULL_S, $1, NULL, $2, linenum);
-									std::cout << "b" <<std::endl;
 								}
 								}
 		| statement					{$$ = $1}

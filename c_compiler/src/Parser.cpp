@@ -279,13 +279,19 @@ bool analyseVariables(abstractNode* node,
 				return false;
 			}
 			std::cout << "Function has previously been declared" << std::endl;
-			return true;
 		} else {
 			std::cout << "Undeclared function" << std::endl;
 			functions[currNodeFunc->val] = currNodeFunc->def;
 			std::cout << "Function declared" << std::endl;
-			return true;
 		}
+		for(int i = 0; i < (((functionDecNode*) (currNodeFunc->def))->parameters).size(); i++)
+			(*scopeList.begin()).insert(
+								std::pair<std::string, type_t>((((functionDecNode*) (currNodeFunc->def))->parameters)[i].id,
+										(((functionDecNode*) (currNodeFunc->def))->parameters)[i].type));
+		if(currNodeFunc->code)
+			if (!analyseVariables(currNodeFunc->code, scopeList))
+				return false;
+		return true;
 	} else if (currNode->node_type == "functionDecNode") {
 		std::cout << "Found declared function" << std::endl;
 		functionDecNode* currNodeFunc = (functionDecNode*) currNode;
@@ -337,7 +343,17 @@ bool analyseVariables(abstractNode* node,
 				return false;
 		std::cout << "Analysed repeat" << std::endl;
 		return true;
-
+	} else if (currNode->node_type == "functionCallNode") {
+		functionDecNode* functionDec = (functionDecNode*) ((Node*) getDec(
+				currNode->val, functions));
+		if(!functionDec)
+		{
+			printError("undeclared function", false, currNode -> linenum);
+			return false;
+		}
+		std::cout <<((functionCallNode*) currNode)->parameters->size()<< std::endl;
+		((typeNode*)currNode) -> type = functionDec -> type;
+		return true;
 	} else {
 		printError("Unknown error", false, currNode->linenum);
 		return false;
@@ -538,6 +554,8 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 			for (int i = 0;
 					i < ((functionCallNode*) currNode)->parameters->size();
 					i++) {
+				std::cout <<((functionCallNode*) currNode)->parameters->size()<< std::endl;
+				std::cout <<  ((Node*)((functionCallNode*) currNode)->parameters->at(i)) -> id << std::endl;
 				if (!analyseTypes(
 						((functionCallNode*) currNode)->parameters->at(i),
 						inFunction, function_type))
@@ -554,7 +572,12 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 					currNode->linenum);
 			return false;
 		}
+	}else if(currNode->node_type == "functionDecNode"){
+		//This node is a reference of the parameters that the actual function will use
+		//It doe not need to be type checked
+		return true;
 	}
+		
 }
 
 type_t getScopeVariable(std::string name,
