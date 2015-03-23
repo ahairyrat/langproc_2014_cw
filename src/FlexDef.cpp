@@ -1,11 +1,11 @@
 #ifndef __C_COMPILER_DEFINITIONS
 #define __C_COMPILER_DEFINITIONS
 
-#include "../includes/FlexDef.h"
+#include "FlexDef.h"
 #include <algorithm>
 
 Node::Node(tokType id, std::string val, int linenum) :
-id(id), node_type("baseNode"), val(val), linenum(linenum) {
+		id(id), node_type("baseNode"), val(val), linenum(linenum) {
 }
 ;
 
@@ -15,7 +15,7 @@ Node::~Node() {
 
 parserNode::parserNode(tokType id, std::string val, abstractNode* LHS,
 		abstractNode* OP, abstractNode* RHS, int linenum) :
-				LHS(LHS), OP(OP), RHS(RHS) {
+		LHS(LHS), OP(OP), RHS(RHS) {
 	Node::node_type = "parserNode";
 	Node::id = id;
 	Node::val = val;
@@ -35,7 +35,7 @@ parserNode::~parserNode() {
 
 variableNode::variableNode(tokType id, std::string val, type_t type,
 		std::string namespacev, int linenum) :
-				storage(NULLS_T), length(NULLL_T), sign(NULLI_T), size(NULL) {
+		storage(NULLS_T), length(NULLL_T), sign(NULLI_T), size(NULL) {
 	Node::node_type = "variableNode";
 	Node::id = id;
 	Node::val = val;
@@ -64,7 +64,7 @@ castNode::castNode(tokType id, type_t castType, int linenum) {
 
 forNode::forNode(tokType id, std::string val, abstractNode* initial,
 		abstractNode* condition, abstractNode* repeat, int linenum) :
-				initial(initial), condition(condition), repeat(repeat) {
+		initial(initial), condition(condition), repeat(repeat) {
 	Node::node_type = "forNode";
 	Node::id = id;
 	Node::val = val;
@@ -79,7 +79,7 @@ forNode::~forNode() {
 
 condNode::condNode(tokType id, std::string val, abstractNode* condition,
 		abstractNode* cond_true, abstractNode* cond_false, int linenum) :
-				condition(condition), cond_true(cond_true), cond_false(cond_false) {
+		condition(condition), cond_true(cond_true), cond_false(cond_false) {
 	Node::node_type = "condNode";
 	Node::id = id;
 	Node::val = val;
@@ -95,7 +95,7 @@ condNode::~condNode() {
 
 functionNode::functionNode(tokType id, std::string val,
 		abstractNode* functionDef, abstractNode* code, int linenum) :
-				code(code), def(functionDef) {
+		code(code), def(functionDef) {
 	Node::node_type = "functionNode";
 	Node::id = id;
 	Node::val = val;
@@ -110,7 +110,7 @@ functionNode::~functionNode() {
 
 functionDecNode::functionDecNode(tokType id, variableNode* variableDef,
 		std::vector<struct_member> parameters, int linenum) :
-				parameters(parameters) {
+		parameters(parameters) {
 	Node::id = id;
 	Node::node_type = "functionDecNode";
 	Node::val = variableDef->val;
@@ -126,12 +126,12 @@ functionDecNode::functionDecNode(tokType id, variableNode* variableDef,
 
 functionCallNode::functionCallNode(tokType id, std::string val,
 		node_list_t parameters, int linenum) :
-				parameters(parameters) {
+		parameters(parameters) {
 	Node::id = id;
 	Node::node_type = "functionCallNode";
 	Node::val = val;
 	Node::linenum = linenum;
-	
+
 	typeNode::type = NULL;
 }
 
@@ -145,14 +145,14 @@ struct find_type: std::unary_function<type_s, bool> {
 	std::string namespacev;
 	std::string name;
 	find_type(std::string namespacev, std::string name) :
-		namespacev(namespacev), name(name) {
+			namespacev(namespacev), name(name) {
 	}
 	bool operator()(type_s const& s) const {
 		return s.namespacev == namespacev && s.name == name;
 	}
 };
 
-void variableNode::evaluateModifiers(const list_t modifiers) {//throws modifiers_not_used_exception
+void variableNode::evaluateModifiers(const list_t modifiers) { //throws modifiers_not_used_exception
 
 	/*for(int i = 0; i < modifiers.size(); i++)
 	 {

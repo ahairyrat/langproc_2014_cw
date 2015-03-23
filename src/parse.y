@@ -3,12 +3,15 @@
 //code does not take into account mathematic precedence
 
 %code requires{
-	extern int yylex();
-	extern int linenum;
+
 	#include <stdio.h>
+	#include "FlexDef.h"
+	#include "Errors.h"
+	
+	int yylex();
+		
 	extern FILE* yyin;
-	#include "includes/FlexDef.h"
-	#include "includes/Errors.h"
+	extern int linenum;
 }
 
 %{

@@ -7,10 +7,6 @@
 #include <cctype>
 #include <sstream>
 
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 //Functions
 //
@@ -40,7 +36,7 @@ type_t getScopeVariable(std::string name,
 //The function to compare the types of two parameter vectors.
 //It will return true if they are equal, false otherwise
 bool compareParameters(std::vector<struct_member>& paramList1,
-		std::vector<struct_member> &paramList2);		
+		std::vector<struct_member> &paramList2);
 //
 //The function to check and evaluate names to see if the parser has added 
 //any modifiers eg arrays , or pointers to it
@@ -68,11 +64,6 @@ void setupTypes();
 //A function to print argument help on the command line
 void printHelp();
 ///////////////////////////////////////////////////////////////////////////////////////////////		
-
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //Global variables for interfacing with the Parser and allow global scoping to occur
@@ -104,39 +95,36 @@ std::map<std::string, abstractNode*> structs;
 std::string outputType;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-int main(int argc , char* argv[]) {
+int main(int argc, char* argv[]) {
 	std::string inFilename;
 	std::string outFileName("");
-	if(argc < 2)
-	{
+	if (argc < 2) {
 		//Only the compiler was run with no command line arguments
 		printError("No input file given", true, 0);
 		return 1;
 	}
-	for(int i = 1; i < argc-1; i++){
+	for (int i = 1; i < argc - 1; i++) {
 		std::string arg(argv[i]);
-		if(arg == "-S")
+		if (arg == "-S")
 			outputType = "Assembly";
-		else if(arg == "-o"){
-			outFileName = argv[i+1];
+		else if (arg == "-o") {
+			outFileName = argv[i + 1];
 			i++;
-		}else if(arg == "-h"){
+		} else if (arg == "-h") {
 			printHelp();
-		}else
-			printError("Unknown argument" , true, 0);
+		} else
+			printError("Unknown argument", true, 0);
 	}
 	//Default the output file name
-	if(outFfileName == "")
+	if (outFfileName == "")
 		outfileName = "a.s";
-		
-	inFileName = argv[argc-1];
-	
+
+	inFileName = argv[argc - 1];
+
 	Translator translator(root, outFileName);
-	
+
 	//Try to parse the input file
-	if (!parse(filename)){
+	if (!parse(filename)) {
 		printError("Error parsing file", true, 0);
 		return 1;
 	}
@@ -144,12 +132,11 @@ int main(int argc , char* argv[]) {
 	else if (analyseTree()) {
 		//If the tree was correct, start the translation into assembly
 		translator.setRoot(root);
-		if (!translator.translate())
-		{
+		if (!translator.translate()) {
 			printError("Error compiling code", true, 0);
 			return 1;
 		}
-	} else{
+	} else {
 		printError("Error analysing code", true, 0);
 		return 1;
 	}
@@ -191,7 +178,7 @@ void printTree(abstractNode* &node) {
 				std::cout << ((typeNode*) currNode)->type->name << ' ';
 			if (((typeNode*) currNode)->actualType)
 				std::cout << '/' << ((typeNode*) currNode)->actualType->name
-				<< ' ';
+						<< ' ';
 
 			std::cout << currNode->val << ' ';
 		} else if (currNode->node_type == "functionNode") {
@@ -220,7 +207,6 @@ void printTree(abstractNode* &node) {
 	}
 }
 
-
 bool analyseTree() {
 	//
 	trimTree(root);
@@ -233,8 +219,7 @@ bool analyseTree() {
 	//Insert global scope
 	scopeList.insert(scopeList.begin(), *(new std::map<std::string, type_t>));
 	//Try to analyse the whole set of variables
-	if (analyseVariables(root, scopeList))
-	{
+	if (analyseVariables(root, scopeList)) {
 		if (analyseTypes(root, false, NULL)) {
 			//Delete global scope
 			scopeList.erase(scopeList.begin());
@@ -280,7 +265,7 @@ void trimTree(abstractNode* &node) {
 				&& !((parserNode*) currNode)->OP) {
 			//If only one node exists, swap current node to new node as long as it is not a unary operator
 			//Shift node up and remove it from previous parent to prevent chain deletion
-			abstractNode* temp = ((parserNode*) currNode)->LHS;	
+			abstractNode* temp = ((parserNode*) currNode)->LHS;
 			((parserNode*) currNode)->LHS = NULL;
 			delete ((parserNode*) currNode);
 
@@ -308,7 +293,7 @@ bool analyseVariables(abstractNode* node,
 
 	Node* currNode = (Node*) node;
 	if (currNode->node_type == "parserNode") {
-	
+
 		parserNode* currNodeEx = (parserNode*) currNode;
 		//Only create a new scope if the operation is null, (list of statements)
 		if (currNodeEx->OP == NULL) {
@@ -330,15 +315,14 @@ bool analyseVariables(abstractNode* node,
 			scopeList.erase(scopeList.begin());
 		}
 		return true;
-		
+
 	} else if (currNode->node_type == "variableNode") {
 		if (currNode->id != CONST_T) {
 			//Try to evaluate name modifiers for the variable
 			if (!evaluateName(currNode, scopeList))
 				return false;
 			//If it is an array with a size parameter, check that the parameter is valid
-			if (((variableNode*) ((typeNode*) currNode))->size)
-			{
+			if (((variableNode*) ((typeNode*) currNode))->size) {
 				abstractNode* size =
 						(((variableNode*) ((typeNode*) currNode))->size);
 				if (!analyseVariables(size, scopeList))
@@ -358,7 +342,8 @@ bool analyseVariables(abstractNode* node,
 		std::string name =
 				((functionDecNode*) ((typeNode*) ((Node*) (currNodeFunc->def))))->val;
 		functionDecNode* functionDec =
-				(functionDecNode*) ((typeNode*) ((Node*) getFunctionDec(name, functions)));
+				(functionDecNode*) ((typeNode*) ((Node*) getFunctionDec(name,
+						functions)));
 		//If the function has been declared before
 		if (functionDec != NULL) {
 			//Check that the parameters types of the two function declaration are the same
@@ -378,7 +363,7 @@ bool analyseVariables(abstractNode* node,
 		//add all defined parameters to the current scope for the function
 		for (int i = 0;
 				i
-				< (((functionDecNode*) (currNodeFunc->def))->parameters).size();
+						< (((functionDecNode*) (currNodeFunc->def))->parameters).size();
 				i++)
 			(*scopeList.begin()).insert(
 					std::pair<std::string, type_t>(
@@ -393,8 +378,9 @@ bool analyseVariables(abstractNode* node,
 		//If it is a function declaration
 		functionDecNode* currNodeFunc = (functionDecNode*) currNode;
 		//Get the declaration node of the function
-		functionDecNode* functionDec = (functionDecNode*) ((Node*) getFunctionDec(
-				currNodeFunc->val, functions));
+		functionDecNode* functionDec =
+				(functionDecNode*) ((Node*) getFunctionDec(currNodeFunc->val,
+						functions));
 		//If the function has been declared before
 		if (functionDec != NULL) {
 			//Check that the parameters types of the two function declaration are the same
@@ -444,11 +430,12 @@ bool analyseVariables(abstractNode* node,
 				return false;
 
 		return true;
-	} else if (currNode->node_type == "functionCallNode") {#
+	} else if (currNode->node_type == "functionCallNode") {
+#
 		//If it is a function call node, check if it has been declared
 		//Other checks are done later on
 		functionDecNode* functionDec = (functionDecNode*) ((Node*) getFunctionDec(
-				currNode->val, functions));
+						currNode->val, functions));
 		if (!functionDec) {
 			printError("undeclared function", false, currNode->linenum);
 			return false;
@@ -456,7 +443,7 @@ bool analyseVariables(abstractNode* node,
 
 		((typeNode*) currNode)->type = functionDec->type;
 		return true;
-	//Base case to block unknown and not implemented nodes
+		//Base case to block unknown and not implemented nodes
 	} else {
 		printError("Unknown error", false, currNode->linenum);
 		return false;
@@ -487,8 +474,8 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 					&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type
 					&& (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
 							== ((typeNode*) ((Node*) (currNodeEx->RHS)))->type))
-				currNodeEx->type =
-						((typeNode*) ((Node*) (currNodeEx->LHS)))->type;
+			currNodeEx->type =
+			((typeNode*) ((Node*) (currNodeEx->LHS)))->type;
 			//If both nodes are of a number type (int, float, double), they can be 
 			//implicitly cast amongst each other
 			//The output type will be the one of the left operand
@@ -497,22 +484,22 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 					&& (
 							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
 									== getType("int", "type"))
-									|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-											== getType("float", "type"))
-											|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
-													== getType("double", "type")))
-													&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-															== getType("int", "type"))
-															|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-																	== getType("float", "type"))
-																	|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-																			== getType("double", "type")))) {
+							|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+									== getType("float", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->LHS)))->type
+									== getType("double", "type")))
+					&& ((((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== getType("int", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== getType("float", "type"))
+							|| (((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== getType("double", "type")))) {
 				//If the implicit cast works, add an explicit cast
 				parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
 						new castNode(TYPE_T,
 								((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
 								currNode->linenum), currNodeEx->RHS,
-								currNode->linenum);
+						currNode->linenum);
 				currNodeEx->RHS = temp;
 				//If the type being assigned to is an int, pointers can be assigned to it without a problem
 				//Again only works if the left operand is an int (int + int* = int, int* + int  = error)
@@ -522,420 +509,433 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 							//pointers can be cast to an int with only a warning
 							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
 									== getType("int", "type"))
-									&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type->isPointer()) {
-				//Add an explicit cast to make it easier to understand later
-				parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
-						new castNode(TYPE_T,
-								((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
-								currNode->linenum), currNodeEx->RHS,
+							&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type->isPointer()) {
+						//Add an explicit cast to make it easier to understand later
+						parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
+								new castNode(TYPE_T,
+										((typeNode*) ((Node*) (currNodeEx->LHS)))->type,
+										currNode->linenum), currNodeEx->RHS,
 								currNode->linenum);
-				currNodeEx->RHS = temp;
+						currNodeEx->RHS = temp;
+						return true;
+					}
+
+					else {
+						printError("Invalid type conversion", false,
+								currNode->linenum);
+						return false;
+					}
+
+					return true;
+				} else if (currNodeEx->LHS) {
+					//If only the LHS exists, the current type will be the type of that node
+					if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type)
+						currNodeEx->type =
+								((typeNode*) ((Node*) (currNodeEx->LHS)))->type;
+					else
+						return false;
+				} else if (currNodeEx->RHS) {
+					//If only the RHS exists, the current type will be the type of that node
+					if (((parserNode*) ((Node*) (currNodeEx->RHS)))->type)
+						currNodeEx->type =
+								((parserNode*) ((Node*) (currNodeEx->RHS)))->type;
+					else
+						return false;
+				} else {
+					return true;
+				}
+			}
+			else if (currNode->node_type == "parserNode" && currNode->id == CAST_T) {
+				//if the current node is node with a cast operator, the type of it will be that of the cast
+				parserNode* currNodeEx = (parserNode*) currNode;
+				currNodeEx->type = ((castNode*) ((Node*) (currNodeEx->OP)))->type;
+
+			} else if (currNode->node_type == "parserNode"
+					&& currNode->id == RETURN_T) {
+				//If the type of the node is a return type, that type has to match the type of the function that it is in
+				if (!inFunction) {
+					//If we are currently not in a function, a return is out of place
+					printError("Cannot have return statement outside of function",
+							false, ((Node*) node)->linenum);
+					return false;
+				}
+				parserNode* currNodeEx = (parserNode*) currNode;
+				//A return n ode can only have RHS expression
+				if (currNodeEx->RHS) {
+					//analyse that node to get its type
+					if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
+					return false;
+					//Check that the return type by that expression is the same as the current function
+					if (!(((typeNode*) ((Node*) (currNodeEx->RHS)))->type
+									== function_type)) {
+						printError("Invalid return type", false,
+								((Node*) node)->linenum);
+						return false;
+						//Otherwise a return value for a void type is wrong
+					} else if (function_type == getType("void", "type")) {
+						printError("Cannot return value from void function", false,
+								((Node*) node)->linenum);
+						return false;
+					}
+					//Give a warning if the return is empty but a type of the function is not void
+				} else if (function_type != getType("void", "type")) {
+					printWarning("Not returning value from non-void function", false,
+							((Node*) node)->linenum);
+					return true;
+				}
 				return true;
-			}
+			} else if (currNode->node_type == "parserNode" && currNode->id == LOOP_T) {
+				//If we are in a loop
+				parserNode* currNodeLoop = (parserNode*) currNode;
+				if (((Node*) (currNodeLoop->LHS))->node_type == "forNode") {
 
-			else {
-				printError("Invalid type conversion", false, currNode->linenum);
-				return false;
-			}
+					forNode* currNodeFor = (forNode*) ((Node*) (currNodeLoop->LHS));
+					//If we are in a for loop and there is no initial ,
+					//condition or repeat procedure then it is wrong
+					if (!currNodeFor->condition || !currNodeFor->initial
+							|| !currNodeFor->repeat) {
+						printError("Missing for loop initialisation", false,
+								currNode->linenum);
+						return false;
+					}
+					//Analyse the types of all of the different components of the for loop
+					//No specific requirements are made for the types
+					if (!analyseTypes(currNodeFor->initial, inFunction, function_type))
+					return false;
 
-			return true;
-		} else if (currNodeEx->LHS) {
-			//If only the LHS exists, the current type will be the type of that node
-			if (((typeNode*) ((Node*) (currNodeEx->LHS)))->type)
-				currNodeEx->type =
-						((typeNode*) ((Node*) (currNodeEx->LHS)))->type;
-			else
-				return false;
-		} else if (currNodeEx->RHS) {
-			//If only the RHS exists, the current type will be the type of that node
-			if (((parserNode*) ((Node*) (currNodeEx->RHS)))->type)
-				currNodeEx->type =
-						((parserNode*) ((Node*) (currNodeEx->RHS)))->type;
-			else
-				return false;
-		} else {
-			return true;
-		}
-	} else if (currNode->node_type == "parserNode" && currNode->id == CAST_T) {
-		//if the current node is node with a cast operator, the type of it will be that of the cast
-		parserNode* currNodeEx = (parserNode*) currNode;
-		currNodeEx->type = ((castNode*) ((Node*) (currNodeEx->OP)))->type;
+					if (!analyseTypes(currNodeFor->condition, inFunction,
+									function_type))
+					return false;
 
-	} else if (currNode->node_type == "parserNode"
-			&& currNode->id == RETURN_T) {
-		//If the type of the node is a return type, that type has to match the type of the function that it is in
-		if (!inFunction) {
-			//If we are currently not in a function, a return is out of place
-			printError("Cannot have return statement outside of function",
-					false, ((Node*) node)->linenum);
-			return false;
-		}
-		parserNode* currNodeEx = (parserNode*) currNode;
-		//A return n ode can only have RHS expression
-		if (currNodeEx->RHS) {
-			//analyse that node to get its type
-			if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
-				return false;
-			//Check that the return type by that expression is the same as the current function
-			if (!(((typeNode*) ((Node*) (currNodeEx->RHS)))->type
-					== function_type)) {
-				printError("Invalid return type", false,
-						((Node*) node)->linenum);
-				return false;
-			//Otherwise a return value for a void type is wrong
-			} else if (function_type == getType("void", "type")) {
-				printError("Cannot return value from void function", false,
-						((Node*) node)->linenum);
-				return false;
-			}
-		//Give a warning if the return is empty but a type of the function is not void
-		} else if (function_type != getType("void", "type")) {
-			printWarning("Not returning value from non-void function", false,
-					((Node*) node)->linenum);
-			return true;
-		}
-		return true;
-	} else if (currNode->node_type == "parserNode" && currNode->id == LOOP_T) {
-		//If we are in a loop
-		parserNode* currNodeLoop = (parserNode*) currNode;
-		if (((Node*) (currNodeLoop->LHS))->node_type == "forNode") {
+					if (!analyseTypes(currNodeFor->repeat, inFunction, function_type))
+					return false;
+					//Analyse the types for the code that is being executed in the loop
+					return analyseTypes(currNodeLoop->RHS, inFunction, function_type);
 
-			forNode* currNodeFor = (forNode*) ((Node*) (currNodeLoop->LHS));
-			//If we are in a for loop and there is no initial ,
-			//condition or repeat procedure then it is wrong
-			if (!currNodeFor->condition || !currNodeFor->initial
-					|| !currNodeFor->repeat) {
-				printError("Missing for loop initialisation", false,
-						currNode->linenum);
-				return false;
-			}
-			//Analyse the types of all of the different components of the for loop
-			//No specific requirements are made for the types
-			if (!analyseTypes(currNodeFor->initial, inFunction, function_type))
-				return false;
+				} else if (((Node*) (currNodeLoop->LHS))->node_type == "condNode") {
+					//If we are not in  for loop , we are in a while loop
+					condNode* currNodeWhile = (condNode*) ((Node*) (currNodeLoop->LHS));
+					//If no conditions exist, there is a problem
+					if (!currNodeWhile->condition) {
+						printError("Missing while loop condition", false,
+								currNode->linenum);
+						return false;
+					}
+					//Check the types of the condition
+					if (!analyseTypes(currNodeWhile->condition, inFunction,
+									function_type))
+					return false;
+					//check the types of the loop body
+					return analyseTypes(currNodeLoop->RHS, inFunction, function_type);
+				}
 
-			if (!analyseTypes(currNodeFor->condition, inFunction,
-					function_type))
 				return false;
-
-			if (!analyseTypes(currNodeFor->repeat, inFunction, function_type))
+			} else if (currNode->node_type == "parserNode") {
+				//Base case for a branching node is to check the nodes in either sub tree
+				//Mainly used for lists of statements where no operator exists
+				parserNode* currNodeEx = (parserNode*) currNode;
+				// Check LHS
+				if (currNodeEx->LHS)
+				if (!analyseTypes(currNodeEx->LHS, inFunction, function_type))
 				return false;
-			//Analyse the types for the code that is being executed in the loop
-			return analyseTypes(currNodeLoop->RHS, inFunction, function_type);
-
-		} else if (((Node*) (currNodeLoop->LHS))->node_type == "condNode") {
-			//If we are not in  for loop , we are in a while loop
-			condNode* currNodeWhile = (condNode*) ((Node*) (currNodeLoop->LHS));
-			//If no conditions exist, there is a problem
-			if (!currNodeWhile->condition) {
-				printError("Missing while loop condition", false,
-						currNode->linenum);
+				//Check RHS
+				if (currNodeEx->RHS)
+				if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
 				return false;
-			}
-			//Check the types of the condition
-			if (!analyseTypes(currNodeWhile->condition, inFunction,
-					function_type))
-				return false;
-			//check the types of the loop body
-			return analyseTypes(currNodeLoop->RHS, inFunction, function_type);
-		}
-
-		return false;
-	} else if (currNode->node_type == "parserNode") {
-		//Base case for a branching node is to check the nodes in either sub tree
-		//Mainly used for lists of statements where no operator exists
-		parserNode* currNodeEx = (parserNode*) currNode;
-		// Check LHS
-		if (currNodeEx->LHS)
-			if (!analyseTypes(currNodeEx->LHS, inFunction, function_type))
-				return false;
-		//Check RHS
-		if (currNodeEx->RHS)
-			if (!analyseTypes(currNodeEx->RHS, inFunction, function_type))
-				return false;
-		return true;
-	} else if (currNode->node_type == "variableNode") {
-		//If the node is variable, nothing needs to be done as its type should be defined already
-		//These will be the base nodes from which type checking builds up from
-		return true;
-	} else if (currNode->node_type == "functionNode") {
-		//For function definitions
-		//Show that we are now in  function
-		inFunction = true;
-		//Set the type of this function
-		function_type =
+				return true;
+			} else if (currNode->node_type == "variableNode") {
+				//If the node is variable, nothing needs to be done as its type should be defined already
+				//These will be the base nodes from which type checking builds up from
+				return true;
+			} else if (currNode->node_type == "functionNode") {
+				//For function definitions
+				//Show that we are now in  function
+				inFunction = true;
+				//Set the type of this function
+				function_type =
 				((functionDecNode*) ((typeNode*) ((Node*) (((functionNode*) currNode)->def))))->type;
-		//Check the code in the function body
-		if (((functionNode*) currNode)->code)
-			if (!analyseTypes(((functionNode*) currNode)->code, inFunction,
-					function_type))
+				//Check the code in the function body
+				if (((functionNode*) currNode)->code)
+				if (!analyseTypes(((functionNode*) currNode)->code, inFunction,
+								function_type))
 				{
 					//Show that we have left the function
 					inFunction = false;
 					return false;
 				}
-		inFunction = false;
-		return true;
-	} else if (currNode->node_type == "condNode") {
-		//If we have a condition node (if, ?)
-		//TO-DO implement syntax checking for conditionals
-		printError("Not implemented yet", false, currNode->linenum);
-		return false;
-	} else if (currNode->node_type == "functionCallNode") {
-		//If we are calling a function
-		functionDecNode* functionDec = (functionDecNode*) ((Node*) getFunctionDec(
-				currNode->val, functions));
-		//Check that a declaration of the function exists
-		if (functionDec != NULL) {
-			std::vector < struct_member > param_types;
-			for (int i = 0;
-					i < ((functionCallNode*) currNode)->parameters->size();
-					i++) {
-				//For each parameter being sent, evaluate that expression
-				if (!analyseTypes(
-						((functionCallNode*) currNode)->parameters->at(i),
-						inFunction, function_type))
-					return false;
-				struct_member temp;
-				//Add the type being sent to vector off types
-				temp.type =
+				inFunction = false;
+				return true;
+			} else if (currNode->node_type == "condNode") {
+				//If we have a condition node (if, ?)
+				//TO-DO implement syntax checking for conditionals
+				printError("Not implemented yet", false, currNode->linenum);
+				return false;
+			} else if (currNode->node_type == "functionCallNode") {
+				//If we are calling a function
+				functionDecNode* functionDec = (functionDecNode*) ((Node*) getFunctionDec(
+								currNode->val, functions));
+				//Check that a declaration of the function exists
+				if (functionDec != NULL) {
+					std::vector < struct_member > param_types;
+					for (int i = 0;
+							i < ((functionCallNode*) currNode)->parameters->size();
+							i++) {
+						//For each parameter being sent, evaluate that expression
+						if (!analyseTypes(
+										((functionCallNode*) currNode)->parameters->at(i),
+										inFunction, function_type))
+						return false;
+						struct_member temp;
+						//Add the type being sent to vector off types
+						temp.type =
 						((typeNode*) ((Node*) ((functionCallNode*) currNode)->parameters->at(
-								i)))->type;
-				param_types.push_back(temp);
-			}
-			//Compare the types to the types of the function declaration
-			if (compareParameters(functionDec->parameters, param_types))
-				return true;
-			printError("Type mismatch in function call", false,
-					currNode->linenum);
-			return false;
-		}
-	} else if (currNode->node_type == "functionDecNode") {
-		//This node is a reference of the parameters that the actual function will use
-		//It doe not need to be type checked
-		//Exists so base case does not catch this
-		return true;
-	}
-	//Base case to catch all unimplemented nodes
-	printError("Unknown error" , false, currNode -> linenum);
-	return false;
-}
-
-type_t getScopeVariable(std::string name,
-		std::list<std::map<std::string, type_t> > &scopeList) {
-	std::list<std::map<std::string, type_t> >::iterator st;
-	std::map<std::string, type_t>::iterator it;
-	std::map < std::string, type_t > scope;
-	//Search through current and all parent scopes
-	for (st = scopeList.begin(); st != scopeList.end(); st++) {
-		scope = *st;
-		it = scope.find(name);
-		if (it != scope.end())
-			//The element has been found
-			return it->second;
-	}
-	return NULL;
-}
-
-abstractNode* getFunctionDec(std::string name,
-		std::map<std::string, abstractNode*> scope) {
-	std::map<std::string, abstractNode*>::iterator it;
-	//Search through the list of declared functions
-	it = scope.find(name);
-	if (it != scope.end())
-		//The function has been found
-		return it->second;
-	return NULL;
-}
-
-bool compareParameters(std::vector<struct_member>& paramList1,
-		std::vector<struct_member> &paramList2) {
-	//If the number of parameters is different, they are incompatible
-	if (paramList1.size() != paramList2.size())
-		return false;
-	for (int i = 0; i < paramList1.size(); i++)
-		//compare the type between the two lists
-		if (paramList1[i].type != paramList2[i].type)
-			return false;
-
-	return true;
-}
-
-bool evaluateName(abstractNode* node,
-		std::list<std::map<std::string, type_t> > &scopeList) {
-	std::string name = ((Node*) node)->val;
-	switch (name[0]) {
-	
-	case '[': {
-		//generate variable name for size - this can be a number or a variable
-		std::string sizeName = name.substr(1, name.find(']') - 1);
-		//If it is a name of a variable, attach a new variable node to it
-		if (isalpha(name[1])) {
-			((variableNode*) ((Node*) node))->size = new variableNode(VAR_T,
-					sizeName, NULL, "unknown", ((Node*) node)->linenum);
-			return true;
-		//If it is a number , attach a new constant node to it
-		} else if (isdigit(name[1])) {
-			((variableNode*) ((Node*) node))->size = new variableNode(CONST_T,
-					sizeName, getType("int", "type"), "const",
-					((Node*) node)->linenum);
-			return true;
-		//Anything else is invalid
-		} else
-			return false;
-		break;
-	}
-	//Struct members have the format .x.y where x is the member name and y the struct variable
-	case '.': {
-		//Generate variable name from the string
-		std::string memberName = name.substr(1, name.find('.', 2) - 1);
-		((Node*) node)->val = name.substr(name.find('.', 2) + 1);
-		//Redo the check for the struct with the new name to get a reference to its declaration
-		if (!checkVariable(node, scopeList))
-			return false;
-		//If the type of the variable is a pointer to a struct, 
-		//this is the wrong way of accessing the member
-		if (getPointer(((Node*) node)->isPointer)) {
-			printError("Trying to access struct member using pointer method",
-					false, ((Node*) node)->linenum);
-			return false;
-		}
-		//Once the type has been determined, check if the member that 
-		//is being accessed actually exists in that struct
-		for (int i = 0;
-				i < (((variableNode*) ((Node*) node))->type->members).size();
-				i++)
-			if ((((variableNode*) ((Node*) node))->type->members).at(i).id
-					== memberName) {
-				std::stringstream ss;
-				//If it does, store the member index in the variable name and return
-				ss << '.' << i << '.' << ((Node*) node)->val;
-				((Node*) node)->val = ss.str();
-				//Alias the type of the variable as the type of the member but store the actual type as well
-				//This is required for type checks
-				((typeNode*) ((Node*) node))->actualType =
-						((typeNode*) ((Node*) node))->type;
-				((typeNode*) ((Node*) node))->type =
-						(((variableNode*) ((Node*) node))->type->members).at(i).type;
+												i)))->type;
+						param_types.push_back(temp);
+					}
+					//Compare the types to the types of the function declaration
+					if (compareParameters(functionDec->parameters, param_types))
+					return true;
+					printError("Type mismatch in function call", false,
+							currNode->linenum);
+					return false;
+				}
+			} else if (currNode->node_type == "functionDecNode") {
+				//This node is a reference of the parameters that the actual function will use
+				//It doe not need to be type checked
+				//Exists so base case does not catch this
 				return true;
 			}
-		printError("Trying to access invalid struct member", false,
-				((Node*) node)->linenum);
-		return false;
-		break;
-	}
-	//Struct members  from pointers have the format -x-y where x is the member name and y the struct variable
-	case '-': {
-		//Generate variable name from the string
-		std::string memberName = name.substr(1, name.find('-', 2) - 1);
-		((Node*) node)->val = name.substr(name.find('-', 2) + 1);
-		//Redo the check for the struct with the new name to get a reference to its declaration
-		if (!checkVariable(node, scopeList))
-			return false;
-		//If the type of the variable is a struct rather than a pointer, 
-		//this is the wrong way of accessing the member
-		if (!getPointer(((Node*) node)->isPointer)) {
-			printError("Trying to access struct pointer member using non-pointer method",
-					false, ((Node*) node)->linenum);
+			//Base case to catch all unimplemented nodes
+			printError("Unknown error" , false, currNode -> linenum);
 			return false;
 		}
-		//Once the type has been determined, check if the member that 
-		//is being accessed actually exists in that struct
-		for (int i = 0;
-				i < (((variableNode*) ((Node*) node))->type->members).size();
-				i++)
-			if ((((variableNode*) ((Node*) node))->type->members).at(i).id
-					== memberName) {
-				std::stringstream ss;
-				//If it does, store the member index in the variable name and return
-				ss << '-' << i << '-' << ((Node*) node)->val;
-				((Node*) node)->val = ss.str();
-				//Alias the type of the variable as the type of the member but store the actual type as well
-				//This is required for type checks
-				((typeNode*) ((Node*) node))->actualType =
-						((typeNode*) ((Node*) node))->type;
-				((typeNode*) ((Node*) node))->type =
-						(((variableNode*) ((Node*) node))->type->members).at(i).type;
-				return true;
-			}
-		printError("Trying to access invalid struct member", false,
-				((Node*) node)->linenum);
-		return false;
-		break;
-	}
-	//TO-DO Add additional checks for other variable modifiers
-	}
-	//Anything else is valid (or not yet caught)
-	return true;
-}
 
-bool checkVariable(abstractNode* node,
-		std::list<std::map<std::string, type_t> > &scopeList) {
-	Node* currNode = (Node*) node;
-	//If the type of the current variable is not known ...
-	if (((typeNode*) currNode)->namespacev == "unknown") {
-		//Check if it exists in any of the viewable scopes
-		if (getScopeVariable(currNode->val, scopeList)) {
-			//Get the type and namespace of the defined type
-			((typeNode*) currNode)->type = getScopeVariable(currNode->val,
-					scopeList);
-			((typeNode*) currNode)->namespacev =
-					((typeNode*) currNode)->type->namespacev
-			return true;
-		} else {
-			printError("Undeclared variable", false, currNode->linenum);
-			return false;
+		type_t getScopeVariable(std::string name,
+				std::list<std::map<std::string, type_t> > &scopeList) {
+			std::list<std::map<std::string, type_t> >::iterator st;
+			std::map<std::string, type_t>::iterator it;
+			std::map < std::string, type_t > scope;
+			//Search through current and all parent scopes
+			for (st = scopeList.begin(); st != scopeList.end(); st++) {
+				scope = *st;
+				it = scope.find(name);
+				if (it != scope.end())
+					//The element has been found
+					return it->second;
+			}
+			return NULL;
 		}
-	} else {
-		//The variable has been declared in this node
-		//So add it to the current scope
-		//Ignore constants (1 should be able to be used multiple times)
-		if (!getScopeVariable(currNode->val, scopeList)
-				&& !(currNode->id == CONST_T)) {
-			(*scopeList.begin()).insert(
-					std::pair<std::string, type_t>(currNode->val,
-							((typeNode*) currNode)->type));
+
+		abstractNode* getFunctionDec(std::string name,
+				std::map<std::string, abstractNode*> scope) {
+			std::map<std::string, abstractNode*>::iterator it;
+			//Search through the list of declared functions
+			it = scope.find(name);
+			if (it != scope.end())
+				//The function has been found
+				return it->second;
+			return NULL;
+		}
+
+		bool compareParameters(std::vector<struct_member>& paramList1,
+				std::vector<struct_member> &paramList2) {
+			//If the number of parameters is different, they are incompatible
+			if (paramList1.size() != paramList2.size())
+				return false;
+			for (int i = 0; i < paramList1.size(); i++)
+				//compare the type between the two lists
+				if (paramList1[i].type != paramList2[i].type)
+					return false;
+
 			return true;
-		//Ignore any structure namespaces as they will be found by the lexer automatically
-		//and should not be added multiple times
-		} else if (((typeNode*) currNode)->type->namespacev == "struct"
-				|| ((typeNode*) currNode)->type->namespacev == "enum"
+		}
+
+		bool evaluateName(abstractNode* node,
+				std::list<std::map<std::string, type_t> > &scopeList) {
+			std::string name = ((Node*) node)->val;
+			switch (name[0]) {
+
+			case '[': {
+				//generate variable name for size - this can be a number or a variable
+				std::string sizeName = name.substr(1, name.find(']') - 1);
+				//If it is a name of a variable, attach a new variable node to it
+				if (isalpha(name[1])) {
+					((variableNode*) ((Node*) node))->size = new variableNode(
+							VAR_T, sizeName, NULL, "unknown",
+							((Node*) node)->linenum);
+					return true;
+					//If it is a number , attach a new constant node to it
+				} else if (isdigit(name[1])) {
+					((variableNode*) ((Node*) node))->size = new variableNode(
+							CONST_T, sizeName, getType("int", "type"), "const",
+							((Node*) node)->linenum);
+					return true;
+					//Anything else is invalid
+				} else
+					return false;
+				break;
+			}
+				//Struct members have the format .x.y where x is the member name and y the struct variable
+			case '.': {
+				//Generate variable name from the string
+				std::string memberName = name.substr(1, name.find('.', 2) - 1);
+				((Node*) node)->val = name.substr(name.find('.', 2) + 1);
+				//Redo the check for the struct with the new name to get a reference to its declaration
+				if (!checkVariable(node, scopeList))
+					return false;
+				//If the type of the variable is a pointer to a struct, 
+				//this is the wrong way of accessing the member
+				if (getPointer(((Node*) node)->isPointer)) {
+					printError(
+							"Trying to access struct member using pointer method",
+							false, ((Node*) node)->linenum);
+					return false;
+				}
+				//Once the type has been determined, check if the member that 
+				//is being accessed actually exists in that struct
+				for (int i = 0;
+						i
+								< (((variableNode*) ((Node*) node))->type->members).size();
+						i++)
+					if ((((variableNode*) ((Node*) node))->type->members).at(i).id
+							== memberName) {
+						std::stringstream ss;
+						//If it does, store the member index in the variable name and return
+						ss << '.' << i << '.' << ((Node*) node)->val;
+						((Node*) node)->val = ss.str();
+						//Alias the type of the variable as the type of the member but store the actual type as well
+						//This is required for type checks
+						((typeNode*) ((Node*) node))->actualType =
+								((typeNode*) ((Node*) node))->type;
+						((typeNode*) ((Node*) node))->type =
+								(((variableNode*) ((Node*) node))->type->members).at(
+										i).type;
+						return true;
+					}
+				printError("Trying to access invalid struct member", false,
+						((Node*) node)->linenum);
+				return false;
+				break;
+			}
+				//Struct members  from pointers have the format -x-y where x is the member name and y the struct variable
+			case '-': {
+				//Generate variable name from the string
+				std::string memberName = name.substr(1, name.find('-', 2) - 1);
+				((Node*) node)->val = name.substr(name.find('-', 2) + 1);
+				//Redo the check for the struct with the new name to get a reference to its declaration
+				if (!checkVariable(node, scopeList))
+					return false;
+				//If the type of the variable is a struct rather than a pointer, 
+				//this is the wrong way of accessing the member
+				if (!getPointer(((Node*) node)->isPointer)) {
+					printError(
+							"Trying to access struct pointer member using non-pointer method",
+							false, ((Node*) node)->linenum);
+					return false;
+				}
+				//Once the type has been determined, check if the member that 
+				//is being accessed actually exists in that struct
+				for (int i = 0;
+						i
+								< (((variableNode*) ((Node*) node))->type->members).size();
+						i++)
+					if ((((variableNode*) ((Node*) node))->type->members).at(i).id
+							== memberName) {
+						std::stringstream ss;
+						//If it does, store the member index in the variable name and return
+						ss << '-' << i << '-' << ((Node*) node)->val;
+						((Node*) node)->val = ss.str();
+						//Alias the type of the variable as the type of the member but store the actual type as well
+						//This is required for type checks
+						((typeNode*) ((Node*) node))->actualType =
+								((typeNode*) ((Node*) node))->type;
+						((typeNode*) ((Node*) node))->type =
+								(((variableNode*) ((Node*) node))->type->members).at(
+										i).type;
+						return true;
+					}
+				printError("Trying to access invalid struct member", false,
+						((Node*) node)->linenum);
+				return false;
+				break;
+			}
+				//TO-DO Add additional checks for other variable modifiers
+			}
+			//Anything else is valid (or not yet caught)
+			return true;
+		}
+
+		bool checkVariable(abstractNode* node,
+				std::list<std::map<std::string, type_t> > &scopeList) {
+			Node* currNode = (Node*) node;
+			//If the type of the current variable is not known ...
+			if (((typeNode*) currNode)->namespacev == "unknown") {
+				//Check if it exists in any of the viewable scopes
+				if (getScopeVariable(currNode->val, scopeList)) {
+					//Get the type and namespace of the defined type
+					((typeNode*) currNode)->type = getScopeVariable(
+							currNode->val, scopeList);
+					((typeNode*) currNode)->namespacev =
+							((typeNode*) currNode)->type->namespacev
+					return true;
+				} else {
+					printError("Undeclared variable", false, currNode->linenum);
+					return false;
+				}
+			} else {
+				//The variable has been declared in this node
+				//So add it to the current scope
+				//Ignore constants (1 should be able to be used multiple times)
+				if (!getScopeVariable(currNode->val, scopeList)
+						&& !(currNode->id == CONST_T)) {
+					(*scopeList.begin()).insert(
+							std::pair<std::string, type_t>(currNode->val,
+									((typeNode*) currNode)->type));
+					return true;
+					//Ignore any structure namespaces as they will be found by the lexer automatically
+					//and should not be added multiple times
+				} else if (((typeNode*) currNode)->type->namespacev == "struct"
+						|| ((typeNode*) currNode)->type->namespacev == "enum"
 						|| ((typeNode*) currNode)->type->namespacev == "union"
-								|| currNode->id == CONST_T)
-			return true;
-		//If the aliased type is different to the actual type
-		//the type must be a structure member so it should not be declared as a varible
-		else if (((typeNode*) currNode)->type
-				!= ((typeNode*) currNode)->actualType)
-			return true;
-		else
-			printError("Variable already declared in scope", false,
-					currNode->linenum);
-		return false;
-	}
-}
+						|| currNode->id == CONST_T)
+					return true;
+				//If the aliased type is different to the actual type
+				//the type must be a structure member so it should not be declared as a varible
+				else if (((typeNode*) currNode)->type
+						!= ((typeNode*) currNode)->actualType)
+					return true;
+				else
+					printError("Variable already declared in scope", false,
+							currNode->linenum);
+				return false;
+			}
+		}
 
-void setupTypes()
-{
-	// add basic types into vector
-	addType("type", "int", NULL, *(new std::vector<struct_member>()));
-	addType("type", "char", NULL, *(new std::vector<struct_member>()));
-	addType("type", "void", NULL, *(new std::vector<struct_member>()));
-	addType("type", "float", NULL, *(new std::vector<struct_member>()));
-	addType("type", "double", NULL, *(new std::vector<struct_member>()));
-	//Add char* types to account for string literals
-	addPointer("char*", getType("char", "type"));
-}
+		void setupTypes() {
+			// add basic types into vector
+			addType("type", "int", NULL, *(new std::vector<struct_member>()));
+			addType("type", "char", NULL, *(new std::vector<struct_member>()));
+			addType("type", "void", NULL, *(new std::vector<struct_member>()));
+			addType("type", "float", NULL, *(new std::vector<struct_member>()));
+			addType("type", "double", NULL,
+					*(new std::vector<struct_member>()));
+			//Add char* types to account for string literals
+			addPointer("char*", getType("char", "type"));
+		}
 
 //Print help on command line
-void printHelp(){
-	std::cout << "A compiler for C v89 to ARM assembly v9" << std::endl;
-	std::cout << "Created by Patrick Engelbert (2015)" << std::endl;
-	std::cout << std::endl << "WARNING - Does not implement many features of C" << std::endl;
-	std::cout << "Use at your own risk" << std::endl;
-	std::cout << std::endl;
-	std::cout << "compiler [-h][-o <file-name>][-S] <input-file>" << std::endl;
-	std::cout << "-h\t access help for command line options" << std::endl;
-	std::cout << "-o\tSpecifiy name for the output file" << std::endl;
-	std::cout << "-S\tOutput format is in ARM v9 assembly" << std::endl;
-}
+		void printHelp() {
+			std::cout << "A compiler for C v89 to ARM assembly v9" << std::endl;
+			std::cout << "Created by Patrick Engelbert (2015)" << std::endl;
+			std::cout << std::endl
+					<< "WARNING - Does not implement many features of C"
+					<< std::endl;
+			std::cout << "Use at your own risk" << std::endl;
+			std::cout << std::endl;
+			std::cout << "compiler [-h][-o <file-name>][-S] <input-file>"
+					<< std::endl;
+			std::cout << "-h\t access help for command line options"
+					<< std::endl;
+			std::cout << "-o\tSpecifiy name for the output file" << std::endl;
+			std::cout << "-S\tOutput format is in ARM v9 assembly" << std::endl;
+		}

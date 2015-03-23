@@ -1,10 +1,9 @@
-#include "../includes/RegisterManager.h"
+#include "RegisterManager.h"
 #include <iostream>
 
-RegisterManager::RegisterManager(CodeGenerator *codeGenerator)
-:freeMemoryLoc(0)
-{
-	this -> codeGenerator = codeGenerator;
+RegisterManager::RegisterManager(CodeGenerator *codeGenerator) :
+		freeMemoryLoc(0) {
+	this->codeGenerator = codeGenerator;
 
 	for (int i = 0; i < NO_REGISTERS; i++) {
 		InstructionData tempData;
@@ -205,7 +204,6 @@ ListNode &RegisterManager::loadStack(unsigned reg, std::string name) {
 }
 ;
 
-
 /*	A function to load a varaible from memory into a register
  Will throw a MemoryAllocationException if the value cannot be found in memory
  */
@@ -216,7 +214,8 @@ void RegisterManager::load(const std::string variableName, unsigned reg) {
 		throw new MemoryAllocationException;
 	//Write the load instruction to fetch data from memory
 	//the offset location is multiplied by 4 due to word and byte addressing 
-	codeGenerator->write(LDR_ASM, reg, 12, 4 * (memory[loc].data.memoryLocation));
+	codeGenerator->write(LDR_ASM, reg, 12,
+			4 * (memory[loc].data.memoryLocation));
 	memory.erase(memory.begin() + loc);
 }
 ;
@@ -251,27 +250,27 @@ void RegisterManager::increment(int reg) {
 void RegisterManager::printRegisters() {
 	for (unsigned i = 0; i < NO_REGISTERS; i++)
 		std::cout << registers[i].data.variableName << ' '
-		<< registers[i].TimeSinceUse << std::endl;
+				<< registers[i].TimeSinceUse << std::endl;
 }
 ;
 
 void RegisterManager::allocateSubroutine(std::vector<std::string> &parameters) {
 	int i, reg;
 	//Push register 4 - 11 onto the stack
-	for(i = 4; i < NO_REGISTERS; i++)
+	for (i = 4; i < NO_REGISTERS; i++)
 		storeStack(registers[i], i);
 	std::cout << stack.size() << std::endl;
 	//Store the link register on the stack
-	codeGenerator->write(STMFD_ASM, 13, 14,0);
+	codeGenerator->write(STMFD_ASM, 13, 14, 0);
 	//All parameters that cannot be stored in teh first four registers have to be stored on the stack
-	for (i = parameters.size()-1; i > 3; i--) {
+	for (i = parameters.size() - 1; i > 3; i--) {
 		//Retrieve location of the parameter
 		reg = allocate(parameters[i]);
 		storeStack(registers[reg], reg);
 	}
 	//For all remaining parameters
 	for (i = 0; i <= 3; i++) {
-		if(i >= parameters.size())
+		if (i >= parameters.size())
 			break;
 		allocate(parameters[i], i);
 	}
@@ -280,38 +279,32 @@ void RegisterManager::allocateSubroutine(std::vector<std::string> &parameters) {
 }
 ;
 
-void RegisterManager::deallocateSubroutine()
-{
-	for(int i = NO_REGISTERS-1; i >= 4; i--)
+void RegisterManager::deallocateSubroutine() {
+	for (int i = NO_REGISTERS - 1; i >= 4; i--)
 		loadStack(i);
 }
 ;
 
 //Aliases the  firs four registers to allow parameters between functions
 //All functions must be aliased or errors may occur when aliases are retrieved
-void RegisterManager::aliasRegisters(std::vector<std::string> &alias)
-{
-	if(alias.size() != 4)
-		std::cout << "ERROR INVALID ALIAS" <<std::endl;
-	for(int i = 0; i < 4; i++)
-	{	
-		this -> alias[i].push_back(registers[i].data.variableName);
+void RegisterManager::aliasRegisters(std::vector<std::string> &alias) {
+	if (alias.size() != 4)
+		std::cout << "ERROR INVALID ALIAS" << std::endl;
+	for (int i = 0; i < 4; i++) {
+		this->alias[i].push_back(registers[i].data.variableName);
 		registers[i].data.variableName = alias[i];
-		
+
 	}
 }
 
-void RegisterManager::restoreAliasRegisters()
-{
-	for(int i = 0; i < 4; i++)
-	{	
+void RegisterManager::restoreAliasRegisters() {
+	for (int i = 0; i < 4; i++) {
 		registers[i].data.variableName = (alias[i])[0];
-		this -> alias[i].pop_back();	
+		this->alias[i].pop_back();
 	}
 }
 
-void RegisterManager::invalidateLocalRegisters()
-{
-	for(int i = 4; i < NO_REGISTERS; i++)
-			registers[i].valid = false;
+void RegisterManager::invalidateLocalRegisters() {
+	for (int i = 4; i < NO_REGISTERS; i++)
+		registers[i].valid = false;
 }

@@ -42,9 +42,9 @@ public:
 	virtual ~CodeGenerator();
 
 	void write(ASM_T cmd, unsigned rt, unsigned r1, unsigned r2);
-	
+
 	void writeLabel(std::string label);
-	
+
 	void writeBranch(ASM_T cmd, std::string label);
 
 private:

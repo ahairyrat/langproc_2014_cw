@@ -1,5 +1,5 @@
-#include "../includes/Errors.h"
-#include "../includes/Translator.h"
+#include "Errors.h"
+#include "Translator.h"
 #include <sstream>
 #include <cstdlib>
 #include <iostream>
@@ -14,7 +14,7 @@ union FloatingPointSinglePrecisionIEEE754 {
 } fnumber;
 
 Translator::Translator(abstractNode* &root, std::string outputFile) :
-				root(root), tempVal(0), labelVal(0) {
+		root(root), tempVal(0), labelVal(0) {
 
 	codeGenerator = new CodeGenerator(outputFile);
 	registerManager = new RegisterManager(codeGenerator);
@@ -35,8 +35,8 @@ void Translator::setRoot(abstractNode* root) {
 bool Translator::translate() {
 	std::cout << "Generating code" << std::endl;
 	//Initialise base for memory addresses to 0 in register 12
-	codeGenerator -> write(MOVI_ASM, 12, 0, 0);
-	codeGenerator -> writeLabel("");
+	codeGenerator->write(MOVI_ASM, 12, 0, 0);
+	codeGenerator->writeLabel("");
 	return translateNode(root);
 }
 ;
@@ -202,34 +202,32 @@ bool Translator::translateNode(abstractNode* node) {
 				fnumber.f = atof(val.c_str());
 				std::stringstream ss;
 				int x = (fnumber.raw.sign << 31) + (fnumber.raw.exponent << 23)
-								+ fnumber.raw.mantissa;
+						+ fnumber.raw.mantissa;
 				std::cout << x << std::endl;
 				codeGenerator->write(MOVI_ASM, rt, x, 0);
 				return true;
 			} else if (currNodeVar->type->name == "char") {
 				//if it is only one character long, it does not contain an escape character
 				int num;
-				if (val.size() >= 2){
+				if (val.size() >= 2) {
 					printError("Escape characters not supported", false,
 							currNode->linenum);
 					return false;
-					}
-				else
+				} else
 					num = val[0];
 				codeGenerator->write(MOVI_ASM, rt, num, 0);
 				return true;
 			}
 		} else if (currNodeVar->id == VAR_T) {
 			//If a variable is found, making sure that it is in the register bank is enough
-			if(currNodeVar -> type -> namespacev == "type")
+			if (currNodeVar->type->namespacev == "type")
 				registerManager->allocate(currNodeVar->val);
-			else if(currNodeVar -> type -> namespacev == "struct")
-			{
+			else if (currNodeVar->type->namespacev == "struct") {
 				//Loads entire struct into the registers
-				for(int i = 0; i < currNodeVar -> type ->members.size(); i++){
+				for (int i = 0; i < currNodeVar->type->members.size(); i++) {
 					std::stringstream ss;
-					ss << currNodeVar -> type-> name << i;
-					registerManager -> allocate(ss.str());
+					ss << currNodeVar->type->name << i;
+					registerManager->allocate(ss.str());
 				}
 			}
 			return true;
@@ -267,9 +265,9 @@ bool Translator::translateNode(abstractNode* node) {
 		ss2 << '_' << ((Node*) (currNodeFunc->def))->val << ':';
 		codeGenerator->writeLabel(ss2.str());
 		//Initialise base for memory addresses to 0 in register 12
-		codeGenerator -> write(MOVI_ASM, 12, 0, 0);
-		codeGenerator -> writeLabel("");
-		
+		codeGenerator->write(MOVI_ASM, 12, 0, 0);
+		codeGenerator->writeLabel("");
+
 		std::vector < std::string > parameterNames;
 		int i;
 		for (i = 0; i < 4; i++) {
@@ -298,61 +296,61 @@ bool Translator::translateNode(abstractNode* node) {
 	} else if (currNode->node_type == "parserNode"
 			&& currNode->id == RETURN_T) {
 		parserNode* currNodeRet = (parserNode*) ((typeNode*) (currNode));
-		if(currNodeRet -> RHS)
-			if(!translateNode(currNodeRet -> RHS))
+		if (currNodeRet->RHS)
+			if (!translateNode(currNodeRet->RHS))
 				return false;
-		int reg = registerManager -> allocate(((Node*)(currNodeRet -> RHS))-> val);
-		codeGenerator -> write(MOV_ASM, 0, reg, 0);
+		int reg = registerManager->allocate(((Node*) (currNodeRet->RHS))->val);
+		codeGenerator->write(MOV_ASM, 0, reg, 0);
 		codeGenerator->write(MOV_ASM, 15, 14, 0);
 		return true;
-	}else if(currNode->node_type == "parserNode"
-			&& currNode->id == LOOP_T){
+	} else if (currNode->node_type == "parserNode" && currNode->id == LOOP_T) {
 		parserNode* currNodeLoop = (parserNode*) ((typeNode*) (currNode));
 		//It is either a while or a for loop
-		if(((Node*)(currNodeLoop -> LHS)) -> node_type == "condNode")
-		{
+		if (((Node*) (currNodeLoop->LHS))->node_type == "condNode") {
 			//It is a while loop
-			std::string beginning = generateLabel();					//Method may not work for large loops as data may be lost in memory
-			codeGenerator -> writeLabel(beginning);
-			if(currNodeLoop -> RHS)
-				if(!translateNode(currNodeLoop -> RHS))
+			std::string beginning = generateLabel();//Method may not work for large loops as data may be lost in memory
+			codeGenerator->writeLabel(beginning);
+			if (currNodeLoop->RHS)
+				if (!translateNode(currNodeLoop->RHS))
 					return false;
-			condNode* currNodeCond = (condNode*)((Node*)(currNodeLoop -> LHS));
-			if(currNodeCond -> condition)
-				if(!translateNode(currNodeCond -> condition))
-						return false;
-			int reg = registerManager -> allocate(((Node*)(currNodeCond -> condition)) -> val);
-			codeGenerator -> write(CMPI_ASM, reg, 0, 0);
-			codeGenerator -> writeBranch(BNE_ASM, beginning);
+			condNode* currNodeCond = (condNode*) ((Node*) (currNodeLoop->LHS));
+			if (currNodeCond->condition)
+				if (!translateNode(currNodeCond->condition))
+					return false;
+			int reg = registerManager->allocate(
+					((Node*) (currNodeCond->condition))->val);
+			codeGenerator->write(CMPI_ASM, reg, 0, 0);
+			codeGenerator->writeBranch(BNE_ASM, beginning);
 			return true;
-			
-		}else if(((Node*)(currNodeLoop -> LHS)) -> node_type == "forNode"){
+
+		} else if (((Node*) (currNodeLoop->LHS))->node_type == "forNode") {
 			//It is a for loop
-			forNode* currNodeFor = (forNode*)((Node*)(currNodeLoop -> LHS));
-			if(currNodeFor -> initial)
-				if(!translateNode(currNodeFor -> initial))
+			forNode* currNodeFor = (forNode*) ((Node*) (currNodeLoop->LHS));
+			if (currNodeFor->initial)
+				if (!translateNode(currNodeFor->initial))
 					return false;
-			std::string loopBeginning = generateLabel();					//Method may not work for large loops as data may be lost in memory
+			std::string loopBeginning = generateLabel();//Method may not work for large loops as data may be lost in memory
 			std::string loopCond = generateLabel();
-			codeGenerator -> writeBranch(B_ASM, loopCond);
-			
+			codeGenerator->writeBranch(B_ASM, loopCond);
+
 			//Wtite the loop body
-			codeGenerator -> writeLabel(loopBeginning);
-			if(currNodeFor -> repeat)
-				if(!translateNode(currNodeFor -> repeat))
+			codeGenerator->writeLabel(loopBeginning);
+			if (currNodeFor->repeat)
+				if (!translateNode(currNodeFor->repeat))
 					return false;
-			if(currNodeLoop -> RHS)
-				if(!translateNode(currNodeLoop -> RHS))
+			if (currNodeLoop->RHS)
+				if (!translateNode(currNodeLoop->RHS))
 					return false;
 
-			codeGenerator -> writeLabel(loopCond);
-			if(currNodeFor -> condition)
-				if(!translateNode(currNodeFor -> condition))
+			codeGenerator->writeLabel(loopCond);
+			if (currNodeFor->condition)
+				if (!translateNode(currNodeFor->condition))
 					return false;
-			int reg = registerManager -> allocate(((Node*)(currNodeFor -> condition)) -> val);
-			codeGenerator -> write(CMPI_ASM, reg, 0, 0);
-			codeGenerator -> writeBranch(BNE_ASM, loopBeginning);
-			
+			int reg = registerManager->allocate(
+					((Node*) (currNodeFor->condition))->val);
+			codeGenerator->write(CMPI_ASM, reg, 0, 0);
+			codeGenerator->writeBranch(BNE_ASM, loopBeginning);
+
 			return true;
 		}
 	}

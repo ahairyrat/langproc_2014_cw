@@ -1,12 +1,17 @@
-#include "../includes/Errors.h"
+#include "Errors.h"
+
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <sstream>
+#include <fstream>
 
 std::string infileName;
 
 void printError(const char* error_message, bool end, int linenum) {
-	if(!end)
-	{
-		std::cerr << infileName << '(' << linenum << ") " << "Error: " << error_message
-				<< " at\t";
+	if (!end) {
+		std::cerr << infileName << '(' << linenum << ") " << "Error: "
+				<< error_message << " at\t";
 		if (infileName != "NULL") {
 			std::ifstream infile;
 			infile.open(infileName.c_str(), std::ifstream::in);
@@ -17,21 +22,19 @@ void printError(const char* error_message, bool end, int linenum) {
 				i--;
 				getline(infile, problemString);
 			}
-			std::cerr << problemString
-			;
+			std::cerr << problemString;
 			infile.close();
 		}
 		std::cerr << std::endl;
-	}
-	else
-		std::cerr << infileName << ' ' << "Error: " << error_message << std::endl;
+	} else
+		std::cerr << infileName << ' ' << "Error: " << error_message
+				<< std::endl;
 }
 
-void printWarning(const char* error_message, bool end,int linenum) {
-	if(!end)
-	{
-		std::cout << infileName << '(' << linenum << ") " << "Warning: " << error_message
-				<< " at\t";
+void printWarning(const char* error_message, bool end, int linenum) {
+	if (!end) {
+		std::cout << infileName << '(' << linenum << ") " << "Warning: "
+				<< error_message << " at\t";
 		if (infileName != "NULL") {
 			std::ifstream infile;
 			infile.open(infileName.c_str(), std::ifstream::in);
@@ -47,9 +50,9 @@ void printWarning(const char* error_message, bool end,int linenum) {
 			infile.close();
 		}
 		std::cout << std::endl;
-	}
-	else
-		std::cout << infileName << ' ' << "Warning: " << error_message << std::endl;
+	} else
+		std::cout << infileName << ' ' << "Warning: " << error_message
+				<< std::endl;
 }
 
 void printFileMissing() {
