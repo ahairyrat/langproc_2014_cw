@@ -5,8 +5,8 @@
 %code requires{
 
 	#include <stdio.h>
-	#include "FlexDef.h"
-	#include "Errors.h"
+	#include "../includes/FlexDef.h"
+	#include "../includes/Errors.h"
 	
 	int yylex();
 		
@@ -17,6 +17,7 @@
 %{
 	#include "CParser.hpp"
 	#include <sstream>
+	#include <cstring>
 
 	void yyerror (char const *s);
 

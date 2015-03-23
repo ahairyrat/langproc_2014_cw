@@ -1,6 +1,6 @@
-CPPFLAGS += -W -Wall -g
+CPPFLAGS += -g
 
-all : compiler
+all :
 	bison -d -o CParser.cpp CParser.y
 	flex	-o CLexer.cpp CLexer.l
 	g++ $(CPPFLAGS) -o compiler.out $(wildcard *.cpp)

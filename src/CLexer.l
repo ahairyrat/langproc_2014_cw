@@ -5,7 +5,7 @@
 
 %{
 	/* Add all include headers, globals and preprocessor directives here*/
-	#include "includes/FlexDef.h"
+	#include "../includes/FlexDef.h"
 	#include "CParser.hpp"
 
 	int isType(char* string);
@@ -100,7 +100,7 @@ NUMBER_ID						0[a-zA-Z]
 {GOTO}								yylval.str = strdup(yytext);return GOTO;
 {GREATER_THAN}						yylval.str = strdup(yytext);return GREATER_THAN;
 {GREATER_THAN}{EQUALS}				yylval.str = strdup(yytext);return GREATER_THAN_EQUALS;
-{GREATER_THAN}{GREATER_THAN			yylval.str = strdup(yytext);return BITWISE_RIGHT;
+{GREATER_THAN}{GREATER_THAN}			yylval.str = strdup(yytext);return BITWISE_RIGHT;
 {IF}								yylval.str = strdup(yytext);return IF;
 {LESS_THAN}							yylval.str = strdup(yytext);return LESS_THAN;
 {LESS_THAN}{EQUALS}					yylval.str = strdup(yytext);return LESS_THAN_EQUALS;

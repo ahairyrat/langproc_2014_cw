@@ -1,4 +1,4 @@
-#include "CodeGenerator.h"
+#include "../includes/CodeGenerator.h"
 
 CodeGenerator::CodeGenerator(std::string &outputFile) {
 	(this->outputFileStream).open(outputFile.c_str(), std::ofstream::trunc);

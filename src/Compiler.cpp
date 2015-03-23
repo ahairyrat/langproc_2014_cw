@@ -1,6 +1,6 @@
-#include "FlexDef.h"
-#include "Errors.h"
-#include "Translator.h"
+#include "../includes/FlexDef.h"
+#include "../includes/Errors.h"
+#include "../includes/Translator.h"
 #include <iostream>
 #include <list>
 #include <map>
@@ -20,7 +20,7 @@ bool analyseTree();
 //
 //The function to trim the tree
 //It trims nodes that are empty and shifts the nodes around if they are useless
-void trimTree(abstractNode* &node);
+bool trimTree(abstractNode* &node);
 //
 //The function to analyse variable declarations in the tree and assign types to used variables
 //It will throw an error and return false should C89 variable rules not be followed
@@ -96,7 +96,8 @@ std::string outputType;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) {
-	std::string inFilename;
+	setupTypes();
+	std::string inFileName;
 	std::string outFileName("");
 	if (argc < 2) {
 		//Only the compiler was run with no command line arguments
@@ -116,15 +117,15 @@ int main(int argc, char* argv[]) {
 			printError("Unknown argument", true, 0);
 	}
 	//Default the output file name
-	if (outFfileName == "")
-		outfileName = "a.s";
+	if (outFileName == "")
+		outFileName = "a.s";
 
 	inFileName = argv[argc - 1];
 
 	Translator translator(root, outFileName);
 
 	//Try to parse the input file
-	if (!parse(filename)) {
+	if (!parse(inFileName)) {
 		printError("Error parsing file", true, 0);
 		return 1;
 	}
@@ -232,7 +233,7 @@ bool analyseTree() {
 
 }
 
-void trimTree(abstractNode* &node) {
+bool trimTree(abstractNode* &node) {
 	Node* currNode = (Node*) node;
 	if (currNode->node_type == "parserNode") {
 		//Trim LHS
@@ -508,7 +509,7 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 							//pointers can be cast to an int with only a warning
 							(((typeNode*) ((Node*) (currNodeEx->LHS)))->type
 									== getType("int", "type"))
-							&& ((typeNode*) ((Node*) (currNodeEx->RHS)))->type->isPointer()) {
+							&& (((typeNode*) ((Node*) (currNodeEx->RHS)))->type->pointer))) {
 						//Add an explicit cast to make it easier to understand later
 						parserNode* temp = new parserNode(CAST_T, NULL_S, NULL,
 								new castNode(TYPE_T,
@@ -784,12 +785,12 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 					return false;
 				//If the type of the variable is a pointer to a struct, 
 				//this is the wrong way of accessing the member
-				if (getPointer(((Node*) node)->isPointer)) {
+				/*if (((typeNode*)((Node*) node))->type->pointer) {
 					printError(
 							"Trying to access struct member using pointer method",
 							false, ((Node*) node)->linenum);
 					return false;
-				}
+				}*/
 				//Once the type has been determined, check if the member that 
 				//is being accessed actually exists in that struct
 				for (int i = 0;
@@ -826,12 +827,12 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 					return false;
 				//If the type of the variable is a struct rather than a pointer, 
 				//this is the wrong way of accessing the member
-				if (!getPointer(((Node*) node)->isPointer)) {
+				/*if (!(((typeNode)((Node*) node))->type->pointer)) {
 					printError(
 							"Trying to access struct pointer member using non-pointer method",
 							false, ((Node*) node)->linenum);
 					return false;
-				}
+				}*/
 				//Once the type has been determined, check if the member that 
 				//is being accessed actually exists in that struct
 				for (int i = 0;
@@ -875,7 +876,7 @@ bool analyseTypes(abstractNode* node, bool inFunction, type_t function_type) {
 					((typeNode*) currNode)->type = getScopeVariable(
 							currNode->val, scopeList);
 					((typeNode*) currNode)->namespacev =
-							((typeNode*) currNode)->type->namespacev
+							((typeNode*) currNode)->type->namespacev;
 					return true;
 				} else {
 					printError("Undeclared variable", false, currNode->linenum);

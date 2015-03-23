@@ -1,5 +1,5 @@
-#include "Errors.h"
-#include "Translator.h"
+#include "../includes/Errors.h"
+#include "../includes/Translator.h"
 #include <sstream>
 #include <cstdlib>
 #include <iostream>
@@ -33,7 +33,6 @@ void Translator::setRoot(abstractNode* root) {
 ;
 
 bool Translator::translate() {
-	std::cout << "Generating code" << std::endl;
 	//Initialise base for memory addresses to 0 in register 12
 	codeGenerator->write(MOVI_ASM, 12, 0, 0);
 	codeGenerator->writeLabel("");
@@ -44,28 +43,22 @@ bool Translator::translate() {
 bool Translator::translateNode(abstractNode* node) {
 	Node* currNode = (Node*) node;
 	if (currNode->node_type == "parserNode" && currNode->id == NULL_T) {
-		std::cout << "Found branch" << std::endl;
 		parserNode* currNodeEx = (parserNode*) currNode;
 		if (currNodeEx->LHS)
 			if (!translateNode(currNodeEx->LHS))
 				return false;
-		std::cout << "Translated LHS" << std::endl;
 		if (currNodeEx->RHS)
 			if (!translateNode(currNodeEx->RHS))
 				return false;
-		std::cout << "Translated RHS" << std::endl;
 		return true;
 	} else if (currNode->node_type == "parserNode" && currNode->id == EXPR_T) {
-		std::cout << "Found expression" << std::endl;
 		parserNode* currNodeEx = (parserNode*) currNode;
 		if (currNodeEx->LHS)
 			if (!translateNode(currNodeEx->LHS))
 				return false;
-		std::cout << "Translated LHS" << std::endl;
 		if (currNodeEx->RHS)
 			if (!translateNode(currNodeEx->RHS))
 				return false;
-		std::cout << "Translated RHS" << std::endl;
 		generateTempName(currNodeEx);
 		int rt = registerManager->allocate(currNodeEx->val);
 		int r1 = registerManager->allocate((((Node*) currNodeEx->LHS))->val);
@@ -166,7 +159,6 @@ bool Translator::translateNode(abstractNode* node) {
 			registerManager->deallocate((((Node*) currNodeEx->LHS))->val);
 		return true;
 	} else if (currNode->node_type == "variableNode") {
-		std::cout << "Found variable" << std::endl;
 		variableNode* currNodeVar = (variableNode*) ((typeNode*) currNode);
 		if (currNodeVar->id == CONST_T) {
 			std::string val = generateTempName(currNode);
@@ -205,7 +197,6 @@ bool Translator::translateNode(abstractNode* node) {
 				std::stringstream ss;
 				int x = (fnumber.raw.sign << 31) + (fnumber.raw.exponent << 23)
 						+ fnumber.raw.mantissa;
-				std::cout << x << std::endl;
 				codeGenerator->write(MOVI_ASM, rt, x, 0);
 				return true;
 			} else if (currNodeVar->type->name == "char") {
@@ -235,7 +226,6 @@ bool Translator::translateNode(abstractNode* node) {
 			return true;
 		}
 	} else if (currNode->node_type == "functionCallNode") {
-		std::cout << "Found function call" << std::endl;
 		functionCallNode* currNodeFunc = (functionCallNode*) currNode;
 		std::vector < std::string > parameterNames;
 		//Reverse the iterators to get parameters in correct order

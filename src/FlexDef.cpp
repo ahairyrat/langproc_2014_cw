@@ -1,7 +1,7 @@
 #ifndef __C_COMPILER_DEFINITIONS
 #define __C_COMPILER_DEFINITIONS
 
-#include "FlexDef.h"
+#include "../includes/FlexDef.h"
 #include <algorithm>
 
 Node::Node(tokType id, std::string val, int linenum) :

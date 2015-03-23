@@ -1,4 +1,4 @@
-#include "RegisterManager.h"
+#include "../includes/RegisterManager.h"
 #include <iostream>
 
 RegisterManager::RegisterManager(CodeGenerator *codeGenerator) :
