@@ -53,11 +53,14 @@ void CodeGenerator::write(ASM_T cmd, unsigned rt, unsigned r1, unsigned r2) {
 				<< std::endl;
 		break;
 	case MULT_ASM:
-		outputFileStream << '\t' << "MULT R" << rt << ", R" << r1 << ", R" << r2
+		outputFileStream << '\t' << "MUL R" << rt << ", R" << r1 << ", R" << r2
+				<< std::endl;
+		break;
+	case MOD_ASM:
+		outputFileStream << '\t' << "MOV R" << rt << ", R" << r1 << " MOD R" << r2
 				<< std::endl;
 		break;
 	case DIV_ASM:
-		//Change divide instruction
 		outputFileStream << '\t' << "SDIV R" << rt << ", R" << r1 << ", R" << r2
 				<< std::endl;
 		break;

@@ -274,7 +274,6 @@ void trimTree(abstractNode* &node) {
 	}
 }
 
-//Extremely inefficient as a pasrerNode can only declare a single variable but createxs a new scope
 bool analyseVariables(abstractNode* node,
 		std::list<std::map<std::string, type_t> > &scopeList) {
 	//A variable is in scope in its current branch starting from itself and the node left of it 

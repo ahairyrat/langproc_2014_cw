@@ -33,7 +33,8 @@ enum ASM_T {
 	BNE_ASM,
 	BL_ASM,
 	LDMFD_ASM,
-	STMFD_ASM
+	STMFD_ASM,
+	MOD_ASM
 };
 
 class CodeGenerator {

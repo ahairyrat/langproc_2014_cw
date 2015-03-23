@@ -139,6 +139,8 @@ bool Translator::translateNode(abstractNode* node) {
 				codeGenerator->write(MULT_ASM, rt, r1, r2);
 			} else if (((Node*) (currNodeEx->OP))->val == "/") {
 				codeGenerator->write(DIV_ASM, rt, r1, r2);
+			} else if (((Node*) (currNodeEx->OP))->val == "%") {
+				codeGenerator->write(MOD_ASM, rt, r1, r2);
 			}
 			break;
 		case BITOP_T:
