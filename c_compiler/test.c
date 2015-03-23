@@ -1,3 +1,0 @@
-
-{myarray[ index ] = a;}
-

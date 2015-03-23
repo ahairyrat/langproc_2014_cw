@@ -132,7 +132,6 @@ variable_dec_stype:
 											{
 												temp2 = temp;
 												temp = (parserNode*)((typeNode*)((Node*)(temp -> RHS)));
-												std::cout << temp -> id << std::endl;
 											}
 		
 								  			temp =  new parserNode(NULL_T, NULL_S, temp, NULL, new variableNode(VAR_T, *i, $1, $1 -> namespacev,linenum), linenum);
@@ -305,9 +304,9 @@ function_dec	:
 		;
 
 function_call 	:
-		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{std::cout << $3 -> size() << std::endl;
+		id OPEN_BRACKET parameter_send_list CLOSE_BRACKET 	{
 									$$ = new functionCallNode(FUNC_CALL_T, $1, $3, linenum);
-									std::cout << ((functionCallNode*)((Node*)$$)) -> parameters -> size() << std::endl;}
+									}
 		| id OPEN_BRACKET CLOSE_BRACKET				{$$ = new functionCallNode(FUNC_CALL_T, $1, NULL, linenum);}
 		;
 
@@ -532,7 +531,6 @@ statement_list	:
 									{
 										temp2 = temp;
 										temp = (parserNode*)((typeNode*)((Node*)(temp -> RHS)));
-										std::cout << temp -> id << std::endl;
 									}
 		
 								  	temp =  new parserNode(NULL_T, NULL_S, temp, NULL, $2, linenum);
