@@ -115,6 +115,7 @@ public:
 	variableNode(tokType id, std::string val, type_t type,
 			std::string namespacev, int linenum);
 	~variableNode();
+	//Currently not implemented
 	void evaluateModifiers(const list_t modifiers);
 };
 

@@ -100,7 +100,7 @@ NUMBER_ID						0[a-zA-Z]
 {GOTO}								yylval.str = strdup(yytext);return GOTO;
 {GREATER_THAN}						yylval.str = strdup(yytext);return GREATER_THAN;
 {GREATER_THAN}{EQUALS}				yylval.str = strdup(yytext);return GREATER_THAN_EQUALS;
-{GREATER_THAN}{GREATER_THAN}			yylval.str = strdup(yytext);return BITWISE_RIGHT;
+{GREATER_THAN}{GREATER_THAN}		yylval.str = strdup(yytext);return BITWISE_RIGHT;
 {IF}								yylval.str = strdup(yytext);return IF;
 {LESS_THAN}							yylval.str = strdup(yytext);return LESS_THAN;
 {LESS_THAN}{EQUALS}					yylval.str = strdup(yytext);return LESS_THAN_EQUALS;
@@ -150,7 +150,7 @@ NUMBER_ID						0[a-zA-Z]
 
 %%
 
-//Check if the current id ahs been declared as a type
+//Check if the current id has been declared as a type
 int isType(char* string)
 {
 	if(getType(string, "type"))

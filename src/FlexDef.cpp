@@ -152,6 +152,7 @@ struct find_type: std::unary_function<type_s, bool> {
 	}
 };
 
+//Currently not implemented
 void variableNode::evaluateModifiers(const list_t modifiers) { //throws modifiers_not_used_exception
 
 	/*for(int i = 0; i < modifiers.size(); i++)
@@ -175,6 +176,9 @@ void variableNode::evaluateModifiers(const list_t modifiers) { //throws modifier
 	 else{}
 	 //throw new modifiers_not_used_exception();
 	 }*/
+
+	//Print a generic error message
+	printError("Modifiers not implemented", true, 0);
 }
 
 type_t getType(const char* name, std::string namespacev) {
