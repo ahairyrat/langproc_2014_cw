@@ -31,5 +31,11 @@ Known To-do
 
 -Arrays
 
+-Variable modifier
+
+-Const correctness
+
 -Clarify grammer
+
+-Optimise code
   
